@@ -1,0 +1,44 @@
+{
+  "kimi-copilot.command.setApiKey": "Kimi: 设置 API 密钥",
+  "kimi-copilot.command.getApiKey": "Kimi: 获取 API 密钥",
+  "kimi-copilot.command.clearApiKey": "Kimi: 清除 API 密钥",
+  "kimi-copilot.command.openSettings": "Kimi: 打开设置",
+  "kimi-copilot.command.showLogs": "Kimi: 显示日志",
+  "kimi-copilot.command.refreshUsage": "Kimi: 刷新余额",
+  "kimi-copilot.command.openUsageDetail": "Kimi: 显示余额详情",
+
+  "kimi-copilot.walkthrough.title": "Kimi Models for GitHub Copilot Chat",
+  "kimi-copilot.walkthrough.description": "在 GitHub Copilot Chat 中使用 Kimi（月之暗面）模型。",
+
+  "kimi-copilot.walkthrough.setApiKey.title": "设置 Kimi API 密钥",
+  "kimi-copilot.walkthrough.setApiKey.description": "[获取 API 密钥](command:kimi-copilot.getApiKey)（来自 platform.kimi.ai 或 platform.kimi.com）。\n[设置 API 密钥](command:kimi-copilot.setApiKey)",
+
+  "kimi-copilot.walkthrough.chooseRegion.title": "选择 Kimi 平台区域",
+  "kimi-copilot.walkthrough.chooseRegion.description": "在国际版（platform.kimi.ai）和中国大陆版（platform.kimi.com）之间选择，需与你创建密钥的平台一致。\n[打开设置](command:kimi-copilot.openSettings)",
+
+  "kimi-copilot.walkthrough.showModels.title": "在选择器中查看 Kimi 模型",
+  "kimi-copilot.walkthrough.showModels.description": "你的 Kimi 模型将出现在 Copilot Chat 的模型选择器中。如果看不到，请打开语言模型管理器以显示它们。\n[打开语言模型](command:workbench.action.chat.manage)",
+
+  "kimi-copilot.config.title": "Kimi Models for GitHub Copilot Chat",
+
+  "kimi-copilot.config.region.description": "Kimi（月之暗面）API 的服务器区域（设置 `baseUrl` 时忽略）。`platform.kimi.ai` 与 `platform.kimi.com` 的密钥相互独立，请选择与你创建密钥时一致的区域。\n\n- **国际版**（`platform.kimi.ai`）— `api.moonshot.ai/v1`\n- **中国大陆**（`platform.kimi.com`）— `api.moonshot.cn/v1`",
+  "kimi-copilot.config.region.international.label": "国际版 (platform.kimi.ai)",
+  "kimi-copilot.config.region.china.label": "中国大陆 (platform.kimi.com)",
+
+  "kimi-copilot.config.baseUrl.description": "覆盖 Kimi API 的基础 URL。设置后将直接使用此值，`region` 被忽略。适用于自托管代理或兼容的 OpenAI 风格端点。",
+
+  "kimi-copilot.config.maxTokens.description": "每次请求的最大输出 token 数。设为 `0` 表示使用 API 默认值（不限制）。可用于控制费用。",
+
+  "kimi-copilot.config.maxRetries.description": "对瞬时失败（HTTP 429 限流和 5xx 服务器错误）的最大自动重试次数（不含首次请求）。设为 `0` 可关闭自动重试、失败时立即报错。重试采用指数退避，并遵循服务器返回的 `Retry-After`。",
+
+  "kimi-copilot.config.modelIdOverrides.description": "重映射内置模型的 API ID。键为选择器中显示的模型 ID（如 `kimi-k3`），值为发送给 API 的 ID。适用于使用不同模型名称的代理或端点。要添加全新模型，请改用 `customModels`。",
+  "kimi-copilot.config.customModels.description": "向选择器添加你自己的 Kimi 模型。每个条目可以是模型 ID 字符串（如 `\"kimi-k3\"`），也可以是对象，如 `{ \"id\": \"my-model\", \"name\": \"My Model\", \"maxInputTokens\": 262144 }`。自定义模型将发送到当前生效的端点。",
+
+  "kimi-copilot.config.thinking.description": "Kimi 在回答前是否进行逐步推理。仅对可切换思考模式的模型（`kimi-k2.6`、`kimi-k2.5`）生效。`kimi-k3` 与 `kimi-k2.7-code` 始终开启思考。\n\n- **开启** — 在复杂编码与智能体任务上质量更高（速度较慢）。\n- **关闭** — 简单修改时响应更快。",
+  "kimi-copilot.config.thinking.enabled.label": "开启",
+  "kimi-copilot.config.thinking.disabled.label": "关闭",
+
+  "kimi-copilot.config.debugLogging.description": "启用详细调试日志，输出到 Kimi 输出频道。使用 [`Kimi: 显示日志`](command:kimi-copilot.showLogs) 查看。日志包含请求元数据，但不包含提示词文本。",
+  "kimi-copilot.config.usageRefreshIntervalMinutes.description": "刷新 Kimi 余额状态栏的间隔（分钟），最小值为 1，最大值为 1440（24 小时）。查询你在 Kimi 开放平台上的可用、赠送与现金余额。仅在未配置 baseUrl 覆盖时生效。",
+  "kimi-copilot.config.showUsageStatusBar.description": "是否显示 Kimi 余额状态栏。显示你在 Kimi 开放平台上的可用、赠送与现金余额。仅在未配置 baseUrl 覆盖时可用。"
+}

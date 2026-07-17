@@ -1,0 +1,270 @@
+{
+	"name": "kimi-for-github-copilot-chat",
+	"displayName": "Kimi Models for GitHub Copilot Chat",
+	"description": "Bring Kimi (Moonshot AI) models — kimi-k3, kimi-k2.7-code and kimi-k2.6 — into GitHub Copilot Chat with visible thinking. BYOK.",
+	"icon": "resources/icon.png",
+    "version": "0.1.0",
+	"publisher": "kimi-for-copilot",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/kimi-for-copilot/kimi-for-copilot.git"
+	},
+	"bugs": {
+		"url": "https://github.com/kimi-for-copilot/kimi-for-copilot/issues"
+	},
+	"homepage": "https://github.com/kimi-for-copilot/kimi-for-copilot#readme",
+	"qna": "https://github.com/kimi-for-copilot/kimi-for-copilot/issues",
+	"engines": {
+		"vscode": "^1.116.0",
+		"node": ">=20"
+	},
+	"categories": [
+		"AI",
+		"Chat",
+		"Programming Languages"
+	],
+	"keywords": [
+		"kimi",
+		"kimi-k3",
+		"kimi-code",
+		"kimi-k2.7-code",
+		"moonshot",
+		"moonshot ai",
+		"copilot",
+		"github copilot",
+		"copilot chat",
+		"byok",
+		"language model",
+		"thinking",
+		"reasoning",
+		"ai",
+		"chat"
+	],
+	"activationEvents": [
+		"onUri",
+		"onStartupFinished"
+	],
+	"enabledApiProposals": [],
+	"main": "./out/extension.js",
+	"contributes": {
+		"languageModelChatProviders": [
+			{
+				"vendor": "kimi",
+				"displayName": "Kimi"
+			}
+		],
+		"commands": [
+			{
+				"command": "kimi-copilot.setApiKey",
+				"title": "%kimi-copilot.command.setApiKey%"
+			},
+			{
+				"command": "kimi-copilot.getApiKey",
+				"title": "%kimi-copilot.command.getApiKey%"
+			},
+			{
+				"command": "kimi-copilot.clearApiKey",
+				"title": "%kimi-copilot.command.clearApiKey%"
+			},
+			{
+				"command": "kimi-copilot.openSettings",
+				"title": "%kimi-copilot.command.openSettings%"
+			},
+			{
+				"command": "kimi-copilot.showLogs",
+				"title": "%kimi-copilot.command.showLogs%"
+			},
+			{
+				"command": "kimi-copilot.refreshUsage",
+				"title": "%kimi-copilot.command.refreshUsage%"
+			},
+			{
+				"command": "kimi-copilot.openUsageDetail",
+				"title": "%kimi-copilot.command.openUsageDetail%"
+			}
+		],
+		"walkthroughs": [
+			{
+				"id": "kimiGettingStarted",
+				"title": "%kimi-copilot.walkthrough.title%",
+				"description": "%kimi-copilot.walkthrough.description%",
+				"steps": [
+					{
+						"id": "setApiKey",
+						"title": "%kimi-copilot.walkthrough.setApiKey.title%",
+						"description": "%kimi-copilot.walkthrough.setApiKey.description%",
+						"media": {
+							"markdown": "resources/walkthrough/set-api-key.md"
+						},
+						"completionEvents": [
+							"onCommand:kimi-copilot.setApiKey"
+						]
+					},
+					{
+						"id": "chooseRegion",
+						"title": "%kimi-copilot.walkthrough.chooseRegion.title%",
+						"description": "%kimi-copilot.walkthrough.chooseRegion.description%",
+						"media": {
+							"markdown": "resources/walkthrough/choose-region.md"
+						}
+					},
+					{
+						"id": "showModels",
+						"title": "%kimi-copilot.walkthrough.showModels.title%",
+						"description": "%kimi-copilot.walkthrough.showModels.description%",
+						"media": {
+							"markdown": "resources/walkthrough/show-models.md"
+						}
+					}
+				]
+			}
+		],
+		"configuration": {
+			"title": "%kimi-copilot.config.title%",
+			"properties": {
+				"kimi-copilot.region": {
+					"type": "string",
+					"default": "international",
+					"enum": [
+						"international",
+						"china"
+					],
+					"enumItemLabels": [
+						"%kimi-copilot.config.region.international.label%",
+						"%kimi-copilot.config.region.china.label%"
+					],
+					"markdownDescription": "%kimi-copilot.config.region.description%"
+				},
+				"kimi-copilot.baseUrl": {
+					"type": "string",
+					"default": "",
+					"markdownDescription": "%kimi-copilot.config.baseUrl.description%"
+				},
+				"kimi-copilot.maxTokens": {
+					"type": "number",
+					"default": 0,
+					"minimum": 0,
+					"description": "%kimi-copilot.config.maxTokens.description%"
+				},
+				"kimi-copilot.maxRetries": {
+					"type": "integer",
+					"default": 3,
+					"minimum": 0,
+					"maximum": 10,
+					"markdownDescription": "%kimi-copilot.config.maxRetries.description%"
+				},
+				"kimi-copilot.modelIdOverrides": {
+					"type": "object",
+					"default": {},
+					"additionalProperties": {
+						"type": "string"
+					},
+					"markdownDescription": "%kimi-copilot.config.modelIdOverrides.description%"
+				},
+				"kimi-copilot.customModels": {
+					"type": "array",
+					"default": [],
+					"markdownDescription": "%kimi-copilot.config.customModels.description%",
+					"items": {
+						"anyOf": [
+							{
+								"type": "string",
+								"description": "A Kimi API model id to add to the picker."
+							},
+							{
+								"type": "object",
+								"required": [
+									"id"
+								],
+								"additionalProperties": false,
+								"properties": {
+									"id": {
+										"type": "string",
+										"description": "API model id sent to Kimi (required)."
+									},
+									"name": {
+										"type": "string",
+										"description": "Display name in the model picker. Defaults to the id."
+									},
+									"maxInputTokens": {
+										"type": "number",
+										"description": "Max input tokens. Defaults to 262144."
+									},
+									"maxOutputTokens": {
+										"type": "number",
+										"description": "Max output tokens. Defaults to 131072."
+									},
+									"toolCalling": {
+										"type": "boolean",
+										"description": "Whether the model supports tool calling. Defaults to true."
+									},
+									"vision": {
+										"type": "boolean",
+										"description": "Whether the model accepts image input. Defaults to false."
+									},
+									"thinking": {
+										"type": "boolean",
+										"description": "Whether the model supports thinking. Defaults to true."
+									}
+								}
+							}
+						]
+					}
+				},
+				"kimi-copilot.thinking": {
+					"type": "string",
+					"default": "enabled",
+					"enum": [
+						"enabled",
+						"disabled"
+					],
+					"enumItemLabels": [
+						"%kimi-copilot.config.thinking.enabled.label%",
+						"%kimi-copilot.config.thinking.disabled.label%"
+					],
+					"markdownDescription": "%kimi-copilot.config.thinking.description%"
+				},
+				"kimi-copilot.debugLogging": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "%kimi-copilot.config.debugLogging.description%"
+				},
+				"kimi-copilot.usageRefreshIntervalMinutes": {
+					"type": "number",
+					"default": 5,
+					"minimum": 1,
+					"maximum": 1440,
+					"markdownDescription": "%kimi-copilot.config.usageRefreshIntervalMinutes.description%"
+				},
+				"kimi-copilot.showUsageStatusBar": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "%kimi-copilot.config.showUsageStatusBar.description%"
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "pnpm run compile",
+		"clean": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\"",
+		"compile": "pnpm run clean && tsc -p ./",
+		"typecheck": "tsc --noEmit -p ./",
+		"lint": "eslint .",
+		"watch": "tsc -watch -p ./",
+		"package": "vsce package -o dist/",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@types/node": "^20.0.0",
+		"@types/vscode": "^1.116.0",
+		"@vscode/vsce": "^3.2.0",
+		"eslint": "^10.5.0",
+		"globals": "^17.7.0",
+		"typescript": "^5.6.0",
+		"typescript-eslint": "^8.62.0",
+		"vitest": "^4.1.9"
+	}
+}

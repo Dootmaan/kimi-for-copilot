@@ -1,0 +1,114 @@
+import * as vscode from 'vscode';
+import { CONFIG_SECTION, DEFAULT_TOOLS_LIMIT, MODELS, RETRY_DEFAULT_MAX_RETRIES, RETRY_MAX_RETRIES_CEILING, USAGE_DEFAULT_REFRESH_MINUTES, USAGE_MAX_REFRESH_MINUTES, USAGE_MIN_REFRESH_MINUTES } from './consts';
+import { t } from './i18n';
+import type { CustomModelConfig, KimiModel, Region, ThinkingMode } from './types';
+
+/** Read the `kimi-copilot` configuration section. */
+function cfg(): vscode.WorkspaceConfiguration {
+	return vscode.workspace.getConfiguration(CONFIG_SECTION);
+}
+
+/** Server region: `international` (platform.kimi.ai / api.moonshot.ai) or `china` (platform.kimi.com / api.moonshot.cn). */
+export function getRegion(): Region {
+	return cfg().get<Region>('region', 'international');
+}
+
+/** User-supplied base URL override (empty = use the region-derived endpoint). */
+export function getBaseUrlOverride(): string {
+	return (cfg().get<string>('baseUrl', '') ?? '').trim();
+}
+
+/** Output-token cap, or `undefined` when unset (use the API default). */
+export function getMaxTokens(): number | undefined {
+	const value = cfg().get<number>('maxTokens', 0);
+	return value && value > 0 ? value : undefined;
+}
+
+/** Map of picker model id → API model id overrides (for regional/proxy naming differences). */
+export function getModelIdOverrides(): Record<string, string> {
+	return cfg().get<Record<string, string>>('modelIdOverrides', {}) ?? {};
+}
+
+/** Resolve the API model id sent for a VS Code model id (override → id). */
+export function getApiModelId(modelId: string): string {
+	const override = getModelIdOverrides()[modelId];
+	return override && override.trim() ? override.trim() : modelId;
+}
+
+/** Whether thinking/reasoning is enabled for thinking-capable toggle models. */
+export function getThinking(): ThinkingMode {
+	return cfg().get<ThinkingMode>('thinking', 'enabled') === 'disabled' ? 'disabled' : 'enabled';
+}
+
+/** Whether verbose debug logging is enabled (Kimi output channel). */
+export function getDebugLogging(): boolean {
+	return cfg().get<boolean>('debugLogging', false);
+}
+
+/** Settings-based fallback API key (less secure; for CI/automation). */
+export function getSettingsApiKey(): string {
+	return (cfg().get<string>('apiKey', '') ?? '').trim();
+}
+
+/** User-defined models from the `customModels` setting, normalized to KimiModel. */
+export function getCustomModels(): KimiModel[] {
+	const raw = cfg().get<Array<string | CustomModelConfig>>('customModels', []) ?? [];
+	const models: KimiModel[] = [];
+	for (const entry of raw) {
+		const config: CustomModelConfig = typeof entry === 'string' ? { id: entry } : entry;
+		const id = (config.id ?? '').trim();
+		if (!id) {
+			continue;
+		}
+		models.push({
+			id,
+			name: config.name?.trim() || id,
+			family: 'kimi',
+			version: 'custom',
+			detail: t('model.custom.detail'),
+			maxInputTokens: config.maxInputTokens ?? 262_144,
+			maxOutputTokens: config.maxOutputTokens ?? 131_072,
+			capabilities: {
+				toolCalling: config.toolCalling === false ? false : DEFAULT_TOOLS_LIMIT,
+				imageInput: config.vision === true,
+				thinking: config.thinking !== false,
+				// Custom models default to the toggleable thinking style.
+				thinkingStyle: 'toggle',
+			},
+		});
+	}
+	return models;
+}
+
+/**
+ * Models to show in the picker: all built-ins (Kimi has a single API per region)
+ * plus custom models. When a custom base URL is set the same list applies. Custom ids win.
+ */
+export function listProviderModels(): KimiModel[] {
+	const customModels = getCustomModels();
+	const customIds = new Set(customModels.map((model) => model.id));
+	const builtins = MODELS.filter((model) => !customIds.has(model.id));
+	return [...builtins, ...customModels];
+}
+
+/** Find a model definition by id, searching custom models then built-ins. */
+export function findModelDefinition(id: string): KimiModel | undefined {
+	return getCustomModels().find((model) => model.id === id) ?? MODELS.find((model) => model.id === id);
+}
+
+/** Status-bar usage refresh interval in minutes (clamped to the allowed range). */
+export function getUsageRefreshIntervalMinutes(): number {
+	const value = cfg().get<number>('usageRefreshIntervalMinutes', USAGE_DEFAULT_REFRESH_MINUTES);
+	return Math.min(USAGE_MAX_REFRESH_MINUTES, Math.max(USAGE_MIN_REFRESH_MINUTES, value));
+}
+
+/** Whether the usage status-bar item should be shown. */
+export function getShowUsageStatusBar(): boolean {
+	return cfg().get<boolean>('showUsageStatusBar', true);
+}
+
+/** Automatic retries for transient chat failures (0 disables), clamped to 0–RETRY_MAX_RETRIES_CEILING. */
+export function getMaxRetries(): number {
+	const value = cfg().get<number>('maxRetries', RETRY_DEFAULT_MAX_RETRIES);
+	return Math.min(RETRY_MAX_RETRIES_CEILING, Math.max(0, Math.floor(value)));
+}

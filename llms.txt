@@ -1,0 +1,7 @@
+# kimi-for-copilot
+
+Kimi (Moonshot AI) models for GitHub Copilot Chat — BYOK, with visible thinking and balance monitoring.
+
+- Docs: docs/kimi-api.md
+- README: README.md
+- API reference (Kimi): https://platform.kimi.ai/docs

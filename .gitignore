@@ -1,0 +1,6 @@
+node_modules/
+.pnpm-store/
+out/
+dist/
+*.vsix
+.DS_Store
