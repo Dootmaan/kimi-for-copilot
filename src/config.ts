@@ -1,11 +1,16 @@
 import * as vscode from 'vscode';
 import { CONFIG_SECTION, DEFAULT_TOOLS_LIMIT, MODELS, RETRY_DEFAULT_MAX_RETRIES, RETRY_MAX_RETRIES_CEILING, USAGE_DEFAULT_REFRESH_MINUTES, USAGE_MAX_REFRESH_MINUTES, USAGE_MIN_REFRESH_MINUTES } from './consts';
 import { t } from './i18n';
-import type { CustomModelConfig, KimiModel, Region, ThinkingMode } from './types';
+import type { ApiMode, CustomModelConfig, KimiModel, Region, ThinkingMode } from './types';
 
 /** Read the `kimi-copilot` configuration section. */
 function cfg(): vscode.WorkspaceConfiguration {
 	return vscode.workspace.getConfiguration(CONFIG_SECTION);
+}
+
+/** Active API mode: `membership` (Kimi Code OAuth + quota) or `standard` (Kimi Open Platform API key + balance). */
+export function getApiMode(): ApiMode {
+	return cfg().get<ApiMode>('apiMode', 'membership');
 }
 
 /** Server region: `international` (platform.kimi.ai / api.moonshot.ai) or `china` (platform.kimi.com / api.moonshot.cn). */
@@ -75,19 +80,24 @@ export function getCustomModels(): KimiModel[] {
 				// Custom models default to the toggleable thinking style.
 				thinkingStyle: 'toggle',
 			},
+			availableIn: ['membership', 'standard'],
 		});
 	}
 	return models;
 }
 
 /**
- * Models to show in the picker: all built-ins (Kimi has a single API per region)
- * plus custom models. When a custom base URL is set the same list applies. Custom ids win.
+ * Models to show in the picker: built-ins filtered by the active API mode
+ * (unless a custom base URL is set), plus all custom models. Custom ids win.
  */
 export function listProviderModels(): KimiModel[] {
 	const customModels = getCustomModels();
 	const customIds = new Set(customModels.map((model) => model.id));
-	const builtins = MODELS.filter((model) => !customIds.has(model.id));
+	const useFilter = !getBaseUrlOverride();
+	const apiMode = getApiMode();
+	const builtins = MODELS.filter(
+		(model) => !customIds.has(model.id) && (!useFilter || model.availableIn.includes(apiMode)),
+	);
 	return [...builtins, ...customModels];
 }
 

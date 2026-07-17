@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getBaseUrlOverride, getRegion, getShowUsageStatusBar, getUsageRefreshIntervalMinutes } from '../config';
+import { getApiMode, getBaseUrlOverride, getRegion, getShowUsageStatusBar, getUsageRefreshIntervalMinutes } from '../config';
 import { API_KEY_SECRET, USAGE_CACHE_STALE_MS, USAGE_MANUAL_DEBOUNCE_MS } from '../consts';
 import { isAbortError } from '../client/errors';
 import type { IUsageClient } from '../client/usage';
@@ -12,12 +12,12 @@ import { UsageDetailPanel } from './usage-detail-panel';
 import { usagePanelStrings } from './usage-strings';
 
 /**
- * Status-bar item showing Kimi account balance (available + voucher + cash). Both regions
- * (platform.kimi.ai + platform.kimi.com) are supported. Constructed inside `registerProvider`
- * (where AuthManager lives). Registers its own refresh + open-detail commands.
+ * Status-bar item showing Kimi usage. Membership mode shows weekly/5h quota % + booster balance;
+ * Standard API mode shows cash + voucher balance. Both apiModes × both regions are supported.
+ * Constructed inside `registerProvider` (where AuthManager lives). Registers its own refresh command.
  *
- * Gate: the item shows AND fetches only when no `baseUrl` override is set, a key is present, and the
- * user has not opted out via `showUsageStatusBar`.
+ * Gate: the item shows AND fetches only when no `baseUrl` override is set, a credential is present,
+ * and the user has not opted out via `showUsageStatusBar`.
  */
 export class UsageStatusBar implements vscode.Disposable {
 	private readonly item: vscode.StatusBarItem;
@@ -42,7 +42,7 @@ export class UsageStatusBar implements vscode.Disposable {
 		this.client = client;
 		this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 50);
 		this.item.command = 'kimi-copilot.openUsageDetail';
-		this.item.name = 'Kimi Balance';
+		this.item.name = 'Kimi Usage';
 
 		context.subscriptions.push(
 			this.item,
@@ -104,12 +104,12 @@ export class UsageStatusBar implements vscode.Disposable {
 			return;
 		}
 		this.lastFetchAt = Date.now();
-		this.render({ status: 'loading', fetchedAt: Date.now() });
+		this.render({ status: 'loading', metrics: [], fetchedAt: Date.now() });
 		this.controller?.abort();
 		const controller = new AbortController();
 		this.controller = controller;
 		try {
-			const snapshot = await this.client.fetchBalance(gate.apiKey, controller.signal);
+			const snapshot = await this.fetchUsage(gate.apiKey, controller.signal);
 			if (snapshot.status === 'ok') {
 				this.lastOk = snapshot;
 			}
@@ -120,14 +120,14 @@ export class UsageStatusBar implements vscode.Disposable {
 				return;
 			}
 			logger.warn('Usage fetch threw', error);
-			this.render({ status: 'network-error', fetchedAt: Date.now() });
+			this.render({ status: 'network-error', metrics: [], fetchedAt: Date.now() });
 		}
 	}
 
 	/**
 	 * Decide whether the status bar should be visible. Passes when no `baseUrl` override is set,
-	 * the user has opted in (`showUsageStatusBar`), and an API key is present. Both regions are
-	 * eligible — the balance endpoint exists on both platforms.
+	 * the user has opted in (`showUsageStatusBar`), and a credential is present. Both apiModes ×
+	 * both regions are eligible — the usage endpoints exist on all stations.
 	 */
 	private async evaluateGate(): Promise<{ passed: true; apiKey: string } | { passed: false }> {
 		if (getBaseUrlOverride() !== '' || !getShowUsageStatusBar()) {
@@ -138,6 +138,13 @@ export class UsageStatusBar implements vscode.Disposable {
 			return { passed: false };
 		}
 		return { passed: true, apiKey };
+	}
+
+	/** Route to fetchMembershipUsage (membership) or fetchBalance (standard) based on apiMode. */
+	private fetchUsage(apiKey: string, signal: AbortSignal): Promise<UsageSnapshot> {
+		return getApiMode() === 'membership'
+			? this.client.fetchMembershipUsage(apiKey, signal)
+			: this.client.fetchBalance(apiKey, signal);
 	}
 
 	/**
@@ -192,11 +199,55 @@ export class UsageStatusBar implements vscode.Disposable {
 
 	/** Status-bar rendering for the ok state (text + tooltip). Pane gets the structured message via fireEffective. */
 	private renderOkBar(snapshot: UsageSnapshot, offline: boolean): void {
+		// Membership quota (metrics present) renders as a percentage; Standard API renders as a balance.
+		if (snapshot.metrics.length > 0) {
+			this.renderOkBarMetrics(snapshot, offline);
+			return;
+		}
+		this.renderOkBarBalance(snapshot, offline);
+	}
+
+	/** Status-bar rendering for the membership quota (weekly/5h metrics). */
+	private renderOkBarMetrics(snapshot: UsageSnapshot, offline: boolean): void {
+		const primary = snapshot.metrics.find((m) => m.kind === 'session') ?? snapshot.metrics[0];
+		this.item.text = primary ? t('usage.status.ok.short', String(primary.used)) : '$(sparkle) Kimi';
+		const lines: string[] = [];
+		if (snapshot.planName) {
+			lines.push(t('usage.plan.label', snapshot.planName));
+		}
+		if (snapshot.renewsAt) {
+			lines.push(t('usage.plan.renewsAt', snapshot.renewsAt));
+		}
+		for (const metric of snapshot.metrics) {
+			const label = metric.kind === 'session' ? t('usage.metric.weekly') : t('usage.metric.session');
+			lines.push(`${label}: ${metric.used}%`);
+			if (metric.resetsAt) {
+				lines.push('  ' + t('usage.metric.resetsAt', new Date(metric.resetsAt).toLocaleString()));
+			}
+		}
+		if (snapshot.balance) {
+			lines.push(`${t('usage.balance.booster')}: $${formatAmount(snapshot.balance.availableBalance)}`);
+		}
+		lines.push(t('usage.tooltip.lastUpdated', new Date(snapshot.fetchedAt).toLocaleTimeString()));
+		if (offline) {
+			lines.push(t('usage.tooltip.offline'));
+		}
+		this.item.tooltip = lines.join('\n');
+		// Critical: weekly quota at 100% → error background.
+		const exhausted = snapshot.metrics.some((m) => m.limit > 0 && m.used >= m.limit);
+		this.item.backgroundColor = exhausted
+			? new vscode.ThemeColor('statusBarItem.errorBackground')
+			: undefined;
+		this.item.show();
+	}
+
+	/** Status-bar rendering for the Standard API balance (available + voucher + cash). */
+	private renderOkBarBalance(snapshot: UsageSnapshot, offline: boolean): void {
 		const bal = snapshot.balance;
 		const currency = getRegion() === 'china' ? '¥' : '$';
 
 		if (bal) {
-			this.item.text = t('usage.status.ok.short', currency, formatAmount(bal.availableBalance));
+			this.item.text = t('usage.status.balance.short', currency, formatAmount(bal.availableBalance));
 		} else {
 			this.item.text = '$(sparkle) Kimi';
 		}

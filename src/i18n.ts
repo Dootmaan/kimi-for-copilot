@@ -29,6 +29,25 @@ const en: Record<string, string> = {
 	'auth.removed': 'Kimi API key removed.',
 	'auth.notConfigured': 'Kimi API key not configured. Run "Kimi: Set API Key" from the Command Palette.',
 
+	// Login method selection (membership mode)
+	'auth.login.placeHolder': 'Choose how to sign in to Kimi Code Membership',
+	'auth.login.oauth': 'Sign in with browser (OAuth)',
+	'auth.login.oauthDetail': 'Authorize via the Kimi device-code login flow (recommended).',
+	'auth.login.apiKey': 'Paste an API key',
+	'auth.login.apiKeyDetail': 'Use a Kimi Code Console API key from kimi.com/code/console.',
+	'auth.promptMembership': 'Enter your Kimi Code API key from kimi.com/code/console.',
+
+	// OAuth (Kimi Code membership login)
+	'oauth.prompt': 'Authorize Kimi Code: open the URL and enter code {0} (expires in {1} min).',
+	'oauth.copyCode': 'Copy Code',
+	'oauth.openUrl': 'Open URL',
+	'oauth.waiting': 'Waiting for Kimi Code authorization…',
+	'oauth.loginSuccess': 'Kimi Code authorized. Membership models are now available.',
+	'oauth.expired': 'The Kimi Code authorization code expired. Please try again.',
+	'oauth.denied': 'Kimi Code authorization was denied.',
+	'oauth.startFailed': 'Failed to start Kimi Code login. Check your network and try again.',
+	'oauth.tokenFailed': 'Kimi Code login failed: {0}',
+
 	// Thinking control
 	'thinking.title': 'Thinking',
 	'thinking.on': 'On',
@@ -86,26 +105,38 @@ const en: Record<string, string> = {
 	// Lifecycle
 	'extension.activateFailed': 'Kimi failed to activate. Run "Kimi: Show Logs" for details.',
 
-	// Usage (balance) status bar
+	// Usage (membership quota + Standard API balance) status bar
 	'usage.status.loading': 'Refreshing…',
-	'usage.status.ok.short': '$(wallet) Kimi {0}{1}',
-	'usage.status.no-data': 'No balance data for this key.',
+	'usage.status.ok.short': '$(sparkle) Kimi {0}%',
+	'usage.status.balance.short': '$(wallet) Kimi {0}{1}',
+	'usage.status.no-data': 'No usage data for this key.',
 	'usage.status.auth-error': 'API key invalid. Click to set your key.',
-	'usage.status.network-error': 'Balance unavailable (offline).',
-	'usage.status.server-error': 'Balance request failed. Try again later.',
+	'usage.status.network-error': 'Usage unavailable (offline).',
+	'usage.status.server-error': 'Usage request failed. Try again later.',
 	'usage.tooltip.lastUpdated': 'Last updated: {0}',
-	'usage.tooltip.offline': 'Balance unavailable (offline). Showing last data.',
+	'usage.tooltip.offline': 'Usage unavailable (offline). Showing last data.',
 	'usage.tooltip.exhausted': 'Balance exhausted — inference is blocked. Top up or add a voucher.',
-	'usage.panel.title': 'Kimi Balance',
+	'usage.metric.session': '5h window',
+	'usage.metric.weekly': 'Weekly quota',
+	'usage.metric.webSearches': 'Web Searches',
+	'usage.metric.window.session': '5-hour rolling',
+	'usage.metric.window.weekly': '7-day rolling',
+	'usage.metric.window.webSearches': 'Monthly',
+	'usage.metric.resetsAt': 'Resets: {0}',
+	'usage.metric.resetsIn': 'Resets in {0}',
+	'usage.plan.label': 'Plan: {0}',
+	'usage.plan.renewsAt': 'Renews: {0}',
+	'usage.panel.title': 'Kimi Usage',
 	'usage.panel.refresh': 'Refresh',
 	'usage.panel.setKey': 'Set API Key',
 	'usage.panel.offline': 'Offline · showing last data',
-	'usage.panel.unavailable': 'Balance unavailable. Use a Kimi Open Platform key (no `baseUrl` override) to view details.',
+	'usage.panel.unavailable': 'Usage unavailable. Use a Kimi Open Platform key or Kimi Code membership (no `baseUrl` override) to view details.',
 	'usage.panel.lastUpdated': 'Last updated: {0}',
 	'usage.balance.section': 'Account Balance',
 	'usage.balance.available': 'Available',
 	'usage.balance.voucher': 'Voucher',
 	'usage.balance.cash': 'Cash',
+	'usage.balance.booster': 'Booster (Extra Usage)',
 };
 
 const zh: Record<string, string> = {
@@ -128,6 +159,25 @@ const zh: Record<string, string> = {
 	'auth.saved': 'Kimi API 密钥已保存。',
 	'auth.removed': 'Kimi API 密钥已删除。',
 	'auth.notConfigured': '尚未配置 Kimi API 密钥。请在命令面板运行“Kimi: Set API Key”。',
+
+	// 登录方式选择（会员模式）
+	'auth.login.placeHolder': '选择 Kimi Code 会员的登录方式',
+	'auth.login.oauth': '浏览器登录（OAuth）',
+	'auth.login.oauthDetail': '通过 Kimi 设备码登录流程授权（推荐）。',
+	'auth.login.apiKey': '粘贴 API 密钥',
+	'auth.login.apiKeyDetail': '使用 kimi.com/code/console 的 Kimi Code API 密钥。',
+	'auth.promptMembership': '请输入来自 kimi.com/code/console 的 Kimi Code API 密钥。',
+
+	// OAuth（Kimi Code 会员登录）
+	'oauth.prompt': '授权 Kimi Code：打开链接并输入验证码 {0}（{1} 分钟内有效）。',
+	'oauth.copyCode': '复制验证码',
+	'oauth.openUrl': '打开链接',
+	'oauth.waiting': '等待 Kimi Code 授权完成…',
+	'oauth.loginSuccess': 'Kimi Code 授权成功，会员模型现已可用。',
+	'oauth.expired': 'Kimi Code 授权码已过期，请重试。',
+	'oauth.denied': 'Kimi Code 授权已被拒绝。',
+	'oauth.startFailed': '启动 Kimi Code 登录失败，请检查网络后重试。',
+	'oauth.tokenFailed': 'Kimi Code 登录失败：{0}',
 
 	'thinking.title': '思考',
 	'thinking.on': '开启',
@@ -168,26 +218,38 @@ const zh: Record<string, string> = {
 
 	'extension.activateFailed': 'Kimi 激活失败。请运行“Kimi: Show Logs”查看详情。',
 
-	// 余额状态栏
+	// 用量（会员配额 + 标准 API 余额）状态栏
 	'usage.status.loading': '刷新中…',
-	'usage.status.ok.short': '$(wallet) Kimi {0}{1}',
-	'usage.status.no-data': '此密钥暂无余额数据。',
+	'usage.status.ok.short': '$(sparkle) Kimi {0}%',
+	'usage.status.balance.short': '$(wallet) Kimi {0}{1}',
+	'usage.status.no-data': '此密钥暂无用量数据。',
 	'usage.status.auth-error': 'API 密钥无效。点击设置密钥。',
-	'usage.status.network-error': '无法获取余额（离线）。',
-	'usage.status.server-error': '余额请求失败，请稍后重试。',
+	'usage.status.network-error': '无法获取用量（离线）。',
+	'usage.status.server-error': '用量请求失败，请稍后重试。',
 	'usage.tooltip.lastUpdated': '最后更新：{0}',
-	'usage.tooltip.offline': '无法获取余额（离线）。显示上次数据。',
+	'usage.tooltip.offline': '无法获取用量（离线）。显示上次数据。',
 	'usage.tooltip.exhausted': '余额已耗尽——推理被阻止。请充值或添加代金券。',
-	'usage.panel.title': 'Kimi 余额',
+	'usage.metric.session': '5 小时窗口',
+	'usage.metric.weekly': '周配额',
+	'usage.metric.webSearches': '网页搜索',
+	'usage.metric.window.session': '5 小时滚动',
+	'usage.metric.window.weekly': '7 天滚动',
+	'usage.metric.window.webSearches': '每月',
+	'usage.metric.resetsAt': '重置时间：{0}',
+	'usage.metric.resetsIn': '{0} 后重置',
+	'usage.plan.label': '套餐：{0}',
+	'usage.plan.renewsAt': '续期时间：{0}',
+	'usage.panel.title': 'Kimi 用量',
 	'usage.panel.refresh': '刷新',
 	'usage.panel.setKey': '设置 API 密钥',
 	'usage.panel.offline': '离线 · 显示上次数据',
-	'usage.panel.unavailable': '暂无余额数据。请使用 Kimi 开放平台密钥（未配置 baseUrl 覆盖时）以查看详情。',
+	'usage.panel.unavailable': '暂无用量数据。请使用 Kimi 开放平台密钥或 Kimi Code 会员（未配置 baseUrl 覆盖时）以查看详情。',
 	'usage.panel.lastUpdated': '最后更新：{0}',
 	'usage.balance.section': '账户余额',
 	'usage.balance.available': '可用余额',
 	'usage.balance.voucher': '代金券',
 	'usage.balance.cash': '现金余额',
+	'usage.balance.booster': '加油包（Extra Usage）',
 };
 
 function isZh(): boolean {

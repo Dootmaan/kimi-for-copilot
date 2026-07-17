@@ -6,8 +6,8 @@ Thanks for your interest in improving **Kimi Models for GitHub Copilot Chat**!
 
 ```bash
 pnpm install
-pnpm run compile
-pnpm test
+pnpm exec tsc -p ./
+pnpm exec vsce package --no-dependencies -o dist/
 ```
 
 Use the VS Code **Run Extension** launch configuration (<kbd>F5</kbd>) to open an Extension Development Host with the extension loaded.

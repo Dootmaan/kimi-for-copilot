@@ -11,17 +11,23 @@
   "kimi-copilot.walkthrough.description": "Set up Kimi (Moonshot AI) models in GitHub Copilot Chat.",
 
   "kimi-copilot.walkthrough.setApiKey.title": "Set your Kimi API key",
-  "kimi-copilot.walkthrough.setApiKey.description": "[Get an API key](command:kimi-copilot.getApiKey) from platform.kimi.ai or platform.kimi.com.\n[Set API Key](command:kimi-copilot.setApiKey)",
+  "kimi-copilot.walkthrough.setApiKey.description": "**Membership mode**: run `Kimi: Set API Key` to start the OAuth device-code login flow.\n**Standard API mode**: [Get an API key](command:kimi-copilot.getApiKey) from platform.kimi.ai or platform.kimi.com.\n[Set API Key](command:kimi-copilot.setApiKey)",
 
-  "kimi-copilot.walkthrough.chooseRegion.title": "Choose your Kimi platform region",
-  "kimi-copilot.walkthrough.chooseRegion.description": "Select International (platform.kimi.ai) or Mainland China (platform.kimi.com) to match where your API key was created.\n[Open settings](command:kimi-copilot.openSettings)",
+  "kimi-copilot.walkthrough.chooseApi.title": "Choose your Kimi API mode",
+  "kimi-copilot.walkthrough.chooseApi.description": "Select between **Kimi Code Membership** (OAuth login, shared quota) and **Standard API** (pay-as-you-go, API key). For Standard API, also pick the matching region.\n[Open settings](command:kimi-copilot.openSettings)",
 
   "kimi-copilot.walkthrough.showModels.title": "Show Kimi models in the picker",
-  "kimi-copilot.walkthrough.showModels.description": "Your Kimi models appear in the Copilot Chat model picker. If they are hidden, open the Language Models manager to show them.\n[Open Language Models](command:workbench.action.chat.manage)",
+  "kimi-copilot.walkthrough.showModels.description": "Your Kimi models appear in the Copilot Chat model picker, filtered by your selected API Mode. If they are hidden, open the Language Models manager to show them.\n[Open Language Models](command:workbench.action.chat.manage)",
 
   "kimi-copilot.config.title": "Kimi Models for GitHub Copilot Chat",
 
-  "kimi-copilot.config.region.description": "Server region for the Kimi (Moonshot AI) API (ignored when `baseUrl` is set). Keys from `platform.kimi.ai` and `platform.kimi.com` are independent — pick the region that matches where your key was created.\n\n- **International** (`platform.kimi.ai`) — `api.moonshot.ai/v1`\n- **Mainland China** (`platform.kimi.com`) — `api.moonshot.cn/v1`",
+  "kimi-copilot.config.apiMode.description": "Which Kimi API to use.\n\n- **Kimi Code Membership** — uses your Kimi membership subscription via OAuth device-code login. Shared quota with Kimi会员. Best for coding with a subscription.\n- **Standard API** — pay-as-you-go access via the Kimi Open Platform. The endpoint depends on the `region` setting.",
+  "kimi-copilot.config.apiMode.membership.label": "Kimi Code Membership",
+  "kimi-copilot.config.apiMode.membership.description": "Use your Kimi membership subscription via OAuth device-code login. Shared quota with Kimi会员. Endpoint: `api.kimi.com/coding/v1`.",
+  "kimi-copilot.config.apiMode.standard.label": "Standard API",
+  "kimi-copilot.config.apiMode.standard.description": "Pay-as-you-go access via the Kimi Open Platform. The endpoint is chosen by the `region` setting.",
+
+  "kimi-copilot.config.region.description": "Server region for the **Standard API** mode (ignored when `baseUrl` is set or `apiMode` is `membership`). Keys from `platform.kimi.ai` and `platform.kimi.com` are independent — pick the region that matches where your key was created.\n\n- **International** (`platform.kimi.ai`) — `api.moonshot.ai/v1`\n- **Mainland China** (`platform.kimi.com`) — `api.moonshot.cn/v1`",
   "kimi-copilot.config.region.international.label": "International (platform.kimi.ai)",
   "kimi-copilot.config.region.china.label": "Mainland China (platform.kimi.com)",
 
@@ -34,11 +40,11 @@
   "kimi-copilot.config.modelIdOverrides.description": "Remap a built-in model's API id. Keys are the model id shown in the picker (e.g. `kimi-k3`); values are the id sent to the API. Use this for proxies or endpoints that use different model names. To add brand-new models, use `customModels` instead.",
   "kimi-copilot.config.customModels.description": "Add your own Kimi models to the picker. Each entry is either a model id string (e.g. `\"kimi-k3\"`) or an object such as `{ \"id\": \"my-model\", \"name\": \"My Model\", \"maxInputTokens\": 262144 }`. Custom models are sent to the active endpoint.",
 
-  "kimi-copilot.config.thinking.description": "Whether Kimi uses step-by-step reasoning before answering. Applies to models with a toggleable thinking mode (`kimi-k2.6`, `kimi-k2.5`). `kimi-k3` and `kimi-k2.7-code` always reason.\n\n- **On** — higher quality on complex coding and agent tasks (slower).\n- **Off** — faster responses for simple edits.",
+  "kimi-copilot.config.thinking.description": "Whether Kimi uses step-by-step reasoning before answering. Applies to models with a toggleable thinking mode (`kimi-k2.6`, `kimi-k2.5`). `kimi-k3`, `kimi-k2.7-code`, and `kimi-for-coding` always reason.\n\n- **On** — higher quality on complex coding and agent tasks (slower).\n- **Off** — faster responses for simple edits.",
   "kimi-copilot.config.thinking.enabled.label": "On",
   "kimi-copilot.config.thinking.disabled.label": "Off",
 
   "kimi-copilot.config.debugLogging.description": "Enable verbose debug logging to the Kimi output channel. Use [`Kimi: Show Logs`](command:kimi-copilot.showLogs) to view the channel. Logs may include request metadata but not prompt text.",
-  "kimi-copilot.config.usageRefreshIntervalMinutes.description": "How often (in minutes) to refresh the Kimi balance status bar. Minimum 1, maximum 1440 (24 hours). Queries your available, voucher, and cash balances on the Kimi Open Platform. Only available when no `baseUrl` override is configured.",
-  "kimi-copilot.config.showUsageStatusBar.description": "Show the Kimi balance status-bar item. Displays your available, voucher, and cash balances on the Kimi Open Platform. Only available when no `baseUrl` override is configured."
+  "kimi-copilot.config.usageRefreshIntervalMinutes.description": "How often (in minutes) to refresh the Kimi usage status bar. Minimum 1, maximum 1440 (24 hours). Shows membership quota (weekly/5h) or Standard API balance. Only available when no `baseUrl` override is configured.",
+  "kimi-copilot.config.showUsageStatusBar.description": "Show the Kimi usage status-bar item. Displays membership quota (weekly/5h) or Standard API balance. Only available when no `baseUrl` override is configured."
 }

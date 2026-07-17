@@ -27,35 +27,56 @@ export const LANGUAGE_MODEL_CHAT_SYSTEM_ROLE = 3;
 export const DEFAULT_TOOLS_LIMIT = 128;
 
 /**
- * Chat-completions base URLs per region. The Kimi (Moonshot) API is
+ * Chat-completions base URLs per API mode × region. The Kimi (Moonshot) API is
  * OpenAI-compatible: `POST {baseUrl}/chat/completions`.
  *
  * Keys from `platform.kimi.ai` and `platform.kimi.com` are independent; the host
- * must match where the key was created.
+ * must match where the key was created. The membership (Kimi Code) mode uses a
+ * single global OAuth-authenticated endpoint.
  */
 export const ENDPOINTS = {
-	international: 'https://api.moonshot.ai/v1',
-	china: 'https://api.moonshot.cn/v1',
+	standardInternational: 'https://api.moonshot.ai/v1',
+	standardChina: 'https://api.moonshot.cn/v1',
+	membership: 'https://api.kimi.com/coding/v1',
 } as const;
 
 /**
- * Host roots for the balance API. Both platforms expose `GET /v1/users/me/balance`
- * with the same JSON shape; only the host differs.
+ * Host roots for the usage APIs.
+ * - `standard` stations expose `GET /v1/users/me/balance` (cash + voucher + cash balance).
+ * - `membership` station exposes `GET /coding/v1/usages` (quota + booster wallet).
  *
- * Auth scheme: both stations use `Authorization: Bearer {apiKey}`.
+ * Auth scheme: all stations use `Authorization: Bearer {token}`.
  */
 export const USAGE_HOSTS = {
-	international: 'https://api.moonshot.ai',
-	china: 'https://api.moonshot.cn',
+	standardInternational: 'https://api.moonshot.ai',
+	standardChina: 'https://api.moonshot.cn',
+	membership: 'https://api.kimi.com',
 } as const;
 
-/** Path for the balance query (available + voucher + cash balance). Shared by both platforms. */
-export const BALANCE_PATH = '/v1/users/me/balance';
+/** Paths for the usage APIs. Standard mode uses the balance path; membership mode uses the usages path. */
+export const USAGE_PATHS = {
+	balance: '/v1/users/me/balance',
+	membership: '/coding/v1/usages',
+} as const;
+
+/** Kimi Code OAuth (RFC 8628 device-code flow) configuration. */
+export const OAUTH = {
+	host: 'https://auth.kimi.com',
+	clientId: '17e5f671-d194-4dfb-9706-5516cb48c098',
+	deviceAuthorizationPath: '/api/oauth/device_authorization',
+	tokenPath: '/api/oauth/token',
+} as const;
+
+/** SecretStorage key for the Kimi Code OAuth token bundle. */
+export const OAUTH_TOKEN_SECRET = 'kimi-copilot.oauthToken';
 
 /** External URLs the extension links to. */
 export const EXTERNAL_URLS = {
 	keysInternational: 'https://platform.kimi.ai/console/api-keys',
 	keysChina: 'https://platform.kimi.com/console/api-keys',
+	membershipPricing: 'https://www.kimi.com/membership/pricing',
+	membershipSubscription: 'https://www.kimi.com/membership/subscription',
+	codeConsole: 'https://www.kimi.com/code/console',
 	docs: 'https://platform.kimi.ai/docs',
 	platformInternational: 'https://platform.kimi.ai',
 	platformChina: 'https://platform.kimi.com',
@@ -86,6 +107,17 @@ export const URI_PATHS = {
 /** Built-in Kimi models exposed through the language model provider. */
 export const MODELS: KimiModel[] = [
 	{
+		id: 'kimi-for-coding',
+		name: 'Kimi for Coding',
+		family: 'kimi',
+		version: 'Code',
+		detail: 'Kimi Code membership model, 256K context',
+		maxInputTokens: 262_144,
+		maxOutputTokens: 131_072,
+		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'code' },
+		availableIn: ['membership'],
+	},
+	{
 		id: 'kimi-k3',
 		name: 'Kimi K3',
 		family: 'kimi',
@@ -94,6 +126,7 @@ export const MODELS: KimiModel[] = [
 		maxInputTokens: 1_000_000,
 		maxOutputTokens: 131_072,
 		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'k3' },
+		availableIn: ['standard'],
 	},
 	{
 		id: 'kimi-k2.7-code',
@@ -104,6 +137,7 @@ export const MODELS: KimiModel[] = [
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,
 		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'code' },
+		availableIn: ['standard'],
 	},
 	{
 		id: 'kimi-k2.7-code-highspeed',
@@ -114,6 +148,7 @@ export const MODELS: KimiModel[] = [
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,
 		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'code' },
+		availableIn: ['standard'],
 	},
 	{
 		id: 'kimi-k2.6',
@@ -124,6 +159,7 @@ export const MODELS: KimiModel[] = [
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,
 		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'toggle' },
+		availableIn: ['standard'],
 	},
 	{
 		id: 'kimi-k2.5',
@@ -134,5 +170,6 @@ export const MODELS: KimiModel[] = [
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,
 		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'toggle' },
+		availableIn: ['standard'],
 	},
 ];

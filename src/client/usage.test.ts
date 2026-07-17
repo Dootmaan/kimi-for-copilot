@@ -34,7 +34,7 @@ describe('UsageClient.fetchBalance', () => {
 	beforeEach(() => vi.useRealTimers());
 
 	it('maps a successful balance response to ok', async () => {
-		const client = new UsageClient('https://api.moonshot.ai', mockFetch({ status: 200, body: BALANCE_OK }));
+		const client = new UsageClient('https://api.moonshot.ai', undefined, mockFetch({ status: 200, body: BALANCE_OK }));
 		const snap = await client.fetchBalance('k');
 		expect(snap.status).toBe('ok');
 		expect(snap.balance).toMatchObject({ availableBalance: 49.58894, voucherBalance: 46.58893, cashBalance: 3.00001 });
@@ -42,7 +42,7 @@ describe('UsageClient.fetchBalance', () => {
 	});
 
 	it('preserves negative cash balance', async () => {
-		const client = new UsageClient('https://api.moonshot.ai', mockFetch({ status: 200, body: BALANCE_NEGATIVE_CASH }));
+		const client = new UsageClient('https://api.moonshot.ai', undefined, mockFetch({ status: 200, body: BALANCE_NEGATIVE_CASH }));
 		const snap = await client.fetchBalance('k');
 		expect(snap.status).toBe('ok');
 		expect(snap.balance?.cashBalance).toBe(-2);
@@ -50,7 +50,7 @@ describe('UsageClient.fetchBalance', () => {
 	});
 
 	it('coerces non-numeric fields to 0 (except valid numeric strings)', async () => {
-		const client = new UsageClient('https://api.moonshot.ai', mockFetch({ status: 200, body: BALANCE_NON_NUMERIC }));
+		const client = new UsageClient('https://api.moonshot.ai', undefined, mockFetch({ status: 200, body: BALANCE_NON_NUMERIC }));
 		const snap = await client.fetchBalance('k');
 		expect(snap.balance?.availableBalance).toBe(0); // 'oops' → 0
 		expect(snap.balance?.voucherBalance).toBe(0); // null → 0
@@ -58,32 +58,32 @@ describe('UsageClient.fetchBalance', () => {
 	});
 
 	it('returns no-data when data is absent', async () => {
-		const client = new UsageClient('https://api.moonshot.ai', mockFetch({ status: 200, body: BALANCE_NO_DATA }));
+		const client = new UsageClient('https://api.moonshot.ai', undefined, mockFetch({ status: 200, body: BALANCE_NO_DATA }));
 		const snap = await client.fetchBalance('k');
 		expect(snap.status).toBe('no-data');
 		expect(snap.balance).toBeUndefined();
 	});
 
 	it('maps HTTP 401 to auth-error', async () => {
-		const client = new UsageClient('https://api.moonshot.ai', mockFetch({ status: 401, body: '' }));
+		const client = new UsageClient('https://api.moonshot.ai', undefined, mockFetch({ status: 401, body: '' }));
 		const snap = await client.fetchBalance('k');
 		expect(snap.status).toBe('auth-error');
 	});
 
 	it('maps HTTP 403 to auth-error', async () => {
-		const client = new UsageClient('https://api.moonshot.ai', mockFetch({ status: 403, body: '' }));
+		const client = new UsageClient('https://api.moonshot.ai', undefined, mockFetch({ status: 403, body: '' }));
 		const snap = await client.fetchBalance('k');
 		expect(snap.status).toBe('auth-error');
 	});
 
 	it('maps HTTP 500 to server-error', async () => {
-		const client = new UsageClient('https://api.moonshot.ai', mockFetch({ status: 500, body: '' }));
+		const client = new UsageClient('https://api.moonshot.ai', undefined, mockFetch({ status: 500, body: '' }));
 		const snap = await client.fetchBalance('k');
 		expect(snap.status).toBe('server-error');
 	});
 
 	it('maps a non-JSON 200 body to server-error', async () => {
-		const client = new UsageClient('https://api.moonshot.ai', mockFetch({ status: 200, body: 'not-json' }));
+		const client = new UsageClient('https://api.moonshot.ai', undefined, mockFetch({ status: 200, body: 'not-json' }));
 		const snap = await client.fetchBalance('k');
 		expect(snap.status).toBe('server-error');
 	});
@@ -94,7 +94,7 @@ describe('UsageClient.fetchBalance', () => {
 			cause: { code: 'ENOTFOUND', name: 'Error', message: 'getaddrinfo ENOTFOUND api.moonshot.ai' },
 		});
 		const failing = vi.fn(async () => { throw networkError; }) as unknown as typeof fetch;
-		const client = new UsageClient('https://api.moonshot.ai', failing);
+		const client = new UsageClient('https://api.moonshot.ai', undefined, failing);
 		const snap = await client.fetchBalance('k');
 		expect(snap.status).toBe('network-error');
 	});
@@ -106,10 +106,64 @@ describe('UsageClient.fetchBalance', () => {
 			expect(target.startsWith(host)).toBe(true);
 			return new Response(BALANCE_OK, { status: 200, headers: { 'Content-Type': 'application/json' } });
 		}) as unknown as typeof fetch;
-		const client = new UsageClient(() => host, fetchImpl);
+		const client = new UsageClient(() => host, undefined, fetchImpl);
 		await client.fetchBalance('k');
 		host = 'https://api.moonshot.cn';
 		await client.fetchBalance('k');
 		expect(fetchImpl).toHaveBeenCalledTimes(2);
+	});
+});
+
+const MEMBERSHIP_OK = JSON.stringify({
+	usage: { name: 'Weekly limit', used: 40, limit: 1000, resetAt: '2026-07-24T00:00:00Z' },
+	limits: [{ detail: { name: '5h limit', used: 1, limit: 100, resetAt: '2026-07-17T05:00:00Z' } }],
+	boosterWallet: {
+		balance: { type: 'BOOSTER', amount: '20000000000', amountLeft: '10000000000' },
+		monthlyChargeLimitEnabled: true,
+		monthlyChargeLimit: { currency: 'USD', priceInCents: '20000' },
+		monthlyUsed: { currency: 'USD', priceInCents: '5000' },
+	},
+});
+const MEMBERSHIP_NO_DATA = JSON.stringify({});
+
+describe('UsageClient.fetchMembershipUsage', () => {
+	beforeEach(() => vi.useRealTimers());
+
+	it('maps a successful membership response to ok with session + weekly metrics', async () => {
+		const client = new UsageClient('https://api.kimi.com', undefined, mockFetch({ status: 200, body: MEMBERSHIP_OK }));
+		const snap = await client.fetchMembershipUsage('token');
+		expect(snap.status).toBe('ok');
+		expect(snap.metrics.map((m) => m.kind)).toEqual(['session', 'weekly']);
+		expect(snap.metrics[0]).toMatchObject({ used: 4, limit: 100 });
+		expect(snap.metrics[1]).toMatchObject({ used: 1, limit: 100 });
+		expect(snap.balance?.availableBalance).toBe(100); // 10000000000 / 1_000_000 / 100 = 100
+	});
+
+	it('returns no-data when response is empty', async () => {
+		const client = new UsageClient('https://api.kimi.com', undefined, mockFetch({ status: 200, body: MEMBERSHIP_NO_DATA }));
+		const snap = await client.fetchMembershipUsage('token');
+		expect(snap.status).toBe('no-data');
+	});
+
+	it('maps HTTP 401 to auth-error', async () => {
+		const client = new UsageClient('https://api.kimi.com', undefined, mockFetch({ status: 401, body: '' }));
+		const snap = await client.fetchMembershipUsage('token');
+		expect(snap.status).toBe('auth-error');
+	});
+
+	it('maps HTTP 500 to server-error', async () => {
+		const client = new UsageClient('https://api.kimi.com', undefined, mockFetch({ status: 500, body: '' }));
+		const snap = await client.fetchMembershipUsage('token');
+		expect(snap.status).toBe('server-error');
+	});
+
+	it('maps network exception to network-error', async () => {
+		const networkError = Object.assign(new TypeError('fetch failed'), {
+			cause: { code: 'ENOTFOUND', name: 'Error', message: 'getaddrinfo ENOTFOUND api.kimi.com' },
+		});
+		const failing = vi.fn(async () => { throw networkError; }) as unknown as typeof fetch;
+		const client = new UsageClient('https://api.kimi.com', undefined, failing);
+		const snap = await client.fetchMembershipUsage('token');
+		expect(snap.status).toBe('network-error');
 	});
 });

@@ -13,11 +13,19 @@ export function usagePanelStrings(): UsagePanelStrings {
 		offline: t('usage.panel.offline'),
 		unavailable: t('usage.panel.unavailable'),
 		lastUpdated: t('usage.panel.lastUpdated'),
-		exhausted: t('usage.tooltip.exhausted'),
-		balanceSection: t('usage.balance.section'),
-		balanceAvailable: t('usage.balance.available'),
-		balanceVoucher: t('usage.balance.voucher'),
-		balanceCash: t('usage.balance.cash'),
+		resetsIn: t('usage.metric.resetsIn'),
+		plan: t('usage.plan.label'),
+		renewsAt: t('usage.plan.renewsAt'),
+		window: {
+			session: t('usage.metric.window.session'),
+			weekly: t('usage.metric.window.weekly'),
+			'web-searches': t('usage.metric.window.webSearches'),
+		},
+		label: {
+			session: t('usage.metric.session'),
+			weekly: t('usage.metric.weekly'),
+			'web-searches': t('usage.metric.webSearches'),
+		},
 		status: {
 			ok: '',
 			loading: t('usage.status.loading'),
@@ -26,5 +34,11 @@ export function usagePanelStrings(): UsagePanelStrings {
 			'network-error': t('usage.status.network-error'),
 			'server-error': t('usage.status.server-error'),
 		},
+		balanceSection: t('usage.balance.section'),
+		balanceAvailable: t('usage.balance.available'),
+		balanceVoucher: t('usage.balance.voucher'),
+		balanceCash: t('usage.balance.cash'),
+		balanceBooster: t('usage.balance.booster'),
+		exhausted: t('usage.tooltip.exhausted'),
 	};
 }

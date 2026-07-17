@@ -46,12 +46,14 @@ vi.mock('vscode', () => ({
 // config getters must be mocked HOISTED (before usage-bar.ts is imported) so setConfig mutations
 // are visible to the module under test.
 const cfg = vi.hoisted(() => ({
+	mode: 'standard' as 'standard' | 'membership',
 	region: 'international' as 'international' | 'china',
 	baseUrl: '',
 	show: true,
 	interval: 5,
 }));
 vi.mock('../config', () => ({
+	getApiMode: () => cfg.mode,
 	getRegion: () => cfg.region,
 	getBaseUrlOverride: () => cfg.baseUrl,
 	getShowUsageStatusBar: () => cfg.show,
@@ -60,7 +62,8 @@ vi.mock('../config', () => ({
 
 import { UsageStatusBar } from './usage-bar';
 
-function setConfig(region: 'international' | 'china' = 'international', baseUrl = '', show = true): void {
+function setConfig(mode: 'standard' | 'membership' = 'standard', region: 'international' | 'china' = 'international', baseUrl = '', show = true): void {
+	cfg.mode = mode;
 	cfg.region = region;
 	cfg.baseUrl = baseUrl;
 	cfg.show = show;
@@ -79,12 +82,27 @@ function okSnapshot(): UsageSnapshot {
 	return {
 		status: 'ok',
 		fetchedAt: Date.now(),
+		metrics: [],
 		balance: { availableBalance: 42.5, voucherBalance: 12, cashBalance: 30.5 },
 	};
 }
 
+function okMembershipSnapshot(): UsageSnapshot {
+	return {
+		status: 'ok',
+		fetchedAt: Date.now(),
+		metrics: [
+			{ kind: 'session', used: 40, limit: 100 },
+			{ kind: 'weekly', used: 15, limit: 100 },
+		],
+	};
+}
+
 function client(): IUsageClient {
-	return { fetchBalance: vi.fn(async () => okSnapshot()) };
+	return {
+		fetchBalance: vi.fn(async () => okSnapshot()),
+		fetchMembershipUsage: vi.fn(async () => okMembershipSnapshot()),
+	};
 }
 
 describe('UsageStatusBar gate + balance rendering', () => {
@@ -92,13 +110,13 @@ describe('UsageStatusBar gate + balance rendering', () => {
 		vi.clearAllMocks();
 		subscriptions.length = 0;
 		vi.useRealTimers();
-		setConfig('international');
+		setConfig('standard', 'international');
 		statusBar.text = '';
 		statusBar.backgroundColor = undefined;
 	});
 
-	it('fetches balance and shows when gate passes (international → $)', async () => {
-		setConfig('international');
+	it('fetches balance and shows when gate passes (standard, international → $)', async () => {
+		setConfig('standard', 'international');
 		const c = client();
 		const bar = new UsageStatusBar(
 			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
@@ -113,8 +131,23 @@ describe('UsageStatusBar gate + balance rendering', () => {
 		bar.dispose();
 	});
 
+	it('fetches membership usage when apiMode is membership', async () => {
+		setConfig('membership', 'international');
+		const c = client();
+		const bar = new UsageStatusBar(
+			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
+			makeAuth(true),
+			c,
+		);
+		await bar.refresh();
+		expect(c.fetchMembershipUsage).toHaveBeenCalledTimes(1);
+		expect(c.fetchBalance).not.toHaveBeenCalled();
+		expect(statusBar.text).toContain('40%');
+		bar.dispose();
+	});
+
 	it('uses ¥ currency in the china region', async () => {
-		setConfig('china');
+		setConfig('standard', 'china');
 		const c = client();
 		const bar = new UsageStatusBar(
 			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
@@ -127,7 +160,7 @@ describe('UsageStatusBar gate + balance rendering', () => {
 	});
 
 	it('hides and does not fetch when baseUrl is overridden', async () => {
-		setConfig('international', 'https://proxy.example');
+		setConfig('standard', 'international', 'https://proxy.example');
 		const c = client();
 		const bar = new UsageStatusBar(
 			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
@@ -140,7 +173,7 @@ describe('UsageStatusBar gate + balance rendering', () => {
 	});
 
 	it('hides and does not fetch when there is no API key', async () => {
-		setConfig('international');
+		setConfig('standard', 'international');
 		const c = client();
 		const bar = new UsageStatusBar(
 			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
@@ -153,13 +186,15 @@ describe('UsageStatusBar gate + balance rendering', () => {
 	});
 
 	it('sets error background when available balance is 0', async () => {
-		setConfig('international');
+		setConfig('standard', 'international');
 		const c: IUsageClient = {
 			fetchBalance: vi.fn(async () => ({
 				status: 'ok',
 				fetchedAt: Date.now(),
+				metrics: [],
 				balance: { availableBalance: 0, voucherBalance: 0, cashBalance: 0 },
 			})),
+			fetchMembershipUsage: vi.fn(),
 		};
 		const bar = new UsageStatusBar(
 			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
@@ -172,7 +207,7 @@ describe('UsageStatusBar gate + balance rendering', () => {
 	});
 
 	it('keeps normal background when balance is positive', async () => {
-		setConfig('international');
+		setConfig('standard', 'international');
 		const c = client();
 		const bar = new UsageStatusBar(
 			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
@@ -183,6 +218,25 @@ describe('UsageStatusBar gate + balance rendering', () => {
 		expect(statusBar.backgroundColor).toBeUndefined();
 		bar.dispose();
 	});
+
+	it('sets error background when a membership metric hits 100%', async () => {
+		setConfig('membership', 'international');
+		const c: IUsageClient = {
+			fetchMembershipUsage: vi.fn(async () => ({
+				status: 'ok', fetchedAt: Date.now(),
+				metrics: [{ kind: 'session', used: 100, limit: 100 }],
+			})),
+			fetchBalance: vi.fn(),
+		};
+		const bar = new UsageStatusBar(
+			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
+			makeAuth(true),
+			c,
+		);
+		await bar.refresh();
+		expect(statusBar.backgroundColor).toBeDefined();
+		bar.dispose();
+	});
 });
 
 describe('UsageStatusBar debounce', () => {
@@ -191,7 +245,7 @@ describe('UsageStatusBar debounce', () => {
 		subscriptions.length = 0;
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date('2026-07-17T00:00:00Z'));
-		setConfig('international');
+		setConfig('standard', 'international');
 	});
 
 	afterEach(() => {
@@ -221,7 +275,7 @@ describe('UsageStatusBar cache-stale rendering', () => {
 		subscriptions.length = 0;
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date('2026-07-17T00:00:00Z'));
-		setConfig('international');
+		setConfig('standard', 'international');
 	});
 
 	afterEach(() => {
@@ -230,9 +284,10 @@ describe('UsageStatusBar cache-stale rendering', () => {
 
 	it('shows cached balance on network error when cache < 1h old', async () => {
 		const ok = okSnapshot();
-		const networkError: UsageSnapshot = { status: 'network-error', fetchedAt: Date.now() };
+		const networkError: UsageSnapshot = { status: 'network-error', metrics: [], fetchedAt: Date.now() };
 		const c: IUsageClient = {
 			fetchBalance: vi.fn(async () => ok).mockResolvedValueOnce(ok).mockResolvedValueOnce(networkError),
+			fetchMembershipUsage: vi.fn(),
 		};
 		const bar = new UsageStatusBar(
 			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
@@ -253,7 +308,7 @@ describe('UsageStatusBar snapshot emitter', () => {
 		subscriptions.length = 0;
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date('2026-07-17T00:00:00Z'));
-		setConfig('international');
+		setConfig('standard', 'international');
 	});
 
 	afterEach(() => {
@@ -278,7 +333,7 @@ describe('UsageStatusBar snapshot emitter', () => {
 	});
 
 	it('fires null when gate fails', async () => {
-		setConfig('international', 'https://proxy.example');
+		setConfig('standard', 'international', 'https://proxy.example');
 		const c = client();
 		const bar = new UsageStatusBar(
 			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
@@ -294,11 +349,12 @@ describe('UsageStatusBar snapshot emitter', () => {
 	});
 
 	it('fires effective message with offline true on cache-fallback network error', async () => {
-		setConfig('international');
+		setConfig('standard', 'international');
 		const ok = okSnapshot();
-		const networkError: UsageSnapshot = { status: 'network-error', fetchedAt: Date.now() };
+		const networkError: UsageSnapshot = { status: 'network-error', metrics: [], fetchedAt: Date.now() };
 		const c: IUsageClient = {
 			fetchBalance: vi.fn().mockResolvedValueOnce(ok).mockResolvedValueOnce(networkError),
+			fetchMembershipUsage: vi.fn(),
 		};
 		const bar = new UsageStatusBar(
 			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],

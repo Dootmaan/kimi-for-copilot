@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { listProviderModels } from '../config';
-import { API_KEY_SECRET, VENDOR_ID } from '../consts';
+import { API_KEY_SECRET, OAUTH_TOKEN_SECRET, VENDOR_ID } from '../consts';
 import { t } from '../i18n';
 import { logger } from '../logger';
 import type { IAuthManager } from '../types';
@@ -41,6 +41,7 @@ export class KimiChatProvider implements vscode.LanguageModelChatProvider {
 				if (
 					e.affectsConfiguration('kimi-copilot.apiKey') ||
 					e.affectsConfiguration('kimi-copilot.baseUrl') ||
+					e.affectsConfiguration('kimi-copilot.apiMode') ||
 					e.affectsConfiguration('kimi-copilot.region') ||
 					e.affectsConfiguration('kimi-copilot.customModels')
 				) {
@@ -48,7 +49,7 @@ export class KimiChatProvider implements vscode.LanguageModelChatProvider {
 				}
 			}),
 			context.secrets.onDidChange((e) => {
-				if (e.key === API_KEY_SECRET) {
+				if (e.key === API_KEY_SECRET || e.key === OAUTH_TOKEN_SECRET) {
 					this.refreshModelPicker();
 				}
 			}),

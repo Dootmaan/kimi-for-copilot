@@ -1,15 +1,31 @@
-import type { UsageBalance, UsageSnapshot, UsageStatus } from '../types';
+import type { UsageBalance, UsageMetric, UsageSnapshot, UsageStatus } from '../types';
 import { formatAmount } from './format';
+
+/** Render-ready metric row (session / weekly / web-searches) for the detail panel. */
+export interface UsageMetricView {
+	kind: UsageMetric['kind'];
+	label: string;
+	window: string;
+	used: number;
+	limit: number;
+	isPercent: boolean;
+	resetsAt?: number;
+}
 
 /** Render-ready cash balance section (all amounts are pre-formatted strings with currency). */
 export interface UsageBalanceView {
 	availableBalance?: string;
 	voucherBalance?: string;
 	cashBalance?: string;
+	/** Booster (Extra Usage) wallet remaining, when populated from the membership API. */
+	booster?: string;
 }
 
 export interface UsagePanelMessage {
 	status: UsageStatus;
+	planName?: string;
+	renewsAt?: string;
+	metrics: UsageMetricView[];
 	balance?: UsageBalanceView;
 	/** Currency symbol for balance amounts: `$` (international) or `¥` (china). */
 	currency: string;
@@ -26,12 +42,18 @@ export interface UsagePanelStrings {
 	offline: string;
 	unavailable: string;
 	lastUpdated: string;
-	exhausted: string;
+	resetsIn: string;
+	plan: string;
+	renewsAt: string;
+	window: Record<UsageMetric['kind'], string>;
+	label: Record<UsageMetric['kind'], string>;
+	status: Record<UsageStatus, string>;
 	balanceSection: string;
 	balanceAvailable: string;
 	balanceVoucher: string;
 	balanceCash: string;
-	status: Record<UsageStatus, string>;
+	balanceBooster: string;
+	exhausted: string;
 }
 
 /**
@@ -51,6 +73,11 @@ export function buildUsageMessage(
 	}
 	return {
 		status: snapshot.status,
+		planName: snapshot.planName,
+		renewsAt: snapshot.renewsAt,
+		metrics: (snapshot.metrics ?? [])
+			.filter((m) => m.kind === 'session' || m.kind === 'weekly')
+			.map(toMetricView, strings),
 		balance: snapshot.balance ? toBalanceView(snapshot.balance) : undefined,
 		currency,
 		lastUpdated: snapshot.status === 'ok' ? snapshot.fetchedAt : undefined,
@@ -60,11 +87,36 @@ export function buildUsageMessage(
 	};
 }
 
+/** Map a {@link UsageMetric} to a {@link UsageMetricView}, pulling labels from `this` (the strings bag). */
+function toMetricView(this: UsagePanelStrings, metric: UsageMetric): UsageMetricView {
+	return {
+		kind: metric.kind,
+		label: this.label[metric.kind],
+		window: this.window[metric.kind],
+		used: metric.used,
+		limit: metric.limit,
+		isPercent: true,
+		resetsAt: metric.resetsAt,
+	};
+}
+
 /** Map a {@link UsageBalance} to a {@link UsageBalanceView} with formatted amounts. */
 function toBalanceView(balance: UsageBalance): UsageBalanceView {
 	return {
 		availableBalance: formatAmount(balance.availableBalance),
 		voucherBalance: formatAmount(balance.voucherBalance),
 		cashBalance: formatAmount(balance.cashBalance),
+		booster: formatAmount(balance.availableBalance),
 	};
 }
+
+/** Bar fill width for a metric, as a clamped 0..100 integer percent. */
+export function metricPercent(view: UsageMetricView): number {
+	return Math.min(Math.max(view.isPercent ? view.used : Math.round((view.used / Math.max(view.limit, 1)) * 100), 0), 100);
+}
+
+/** CSS rules that size each bar fill, one `#fill-<kind>{width:N%}` per metric. */
+export function barWidthCss(metrics: UsageMetricView[]): string {
+	return metrics.map((m) => `#fill-${m.kind}{width:${metricPercent(m)}%}`).join('\n');
+}
+

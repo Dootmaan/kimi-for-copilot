@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import * as vscode from 'vscode';
 import { getRegion } from '../config';
 import { t } from '../i18n';
-import type { UsagePanelMessage } from './usage-detail-html';
+import { barWidthCss, type UsagePanelMessage } from './usage-detail-html';
 import type { UsageStatusBar } from './usage-bar';
 import { usagePanelStrings } from './usage-strings';
 
@@ -92,6 +92,7 @@ export class UsageDetailPanel {
 		const gateFailed = message === null;
 		const effective: UsagePanelMessage = message ?? {
 			status: 'no-data',
+			metrics: [],
 			currency: getRegion() === 'china' ? '¥' : '$',
 			offline: false,
 			theme,
@@ -112,6 +113,7 @@ export class UsageDetailPanel {
 	<title>${escapeHtml(effective.strings.title)}</title>
 	<style nonce="${nonce}">
 		${themeCss(theme)}
+		${barWidthCss(effective.metrics)}
 	</style>
 </head>
 <body>
@@ -125,6 +127,28 @@ export class UsageDetailPanel {
 		document.getElementById('refresh').addEventListener('click', () => vscode.postMessage({ type: 'refresh' }));
 		const setKeyBtn = document.getElementById('setKey');
 		if (setKeyBtn) setKeyBtn.addEventListener('click', () => vscode.postMessage({ type: 'setKey' }));
+		const resetsAtTimes = ${jsonForScript(resetsAtMap(effective))};
+		if (resetsAtTimes && Object.keys(resetsAtTimes).length > 0) {
+			const fmt = (ms) => {
+				if (ms <= 0) return '0m';
+				const d = Math.floor(ms / 86400000);
+				const h = Math.floor((ms % 86400000) / 3600000);
+				const m = Math.round((ms % 3600000) / 60000);
+				if (d > 0) return d + 'd ' + h + 'h';
+				if (h > 0 && m > 0) return h + 'h ' + m + 'm';
+				if (h > 0) return h + 'h';
+				return m + 'm';
+			};
+			const tick = () => {
+				const now = Date.now();
+				for (const [key, ts] of Object.entries(resetsAtTimes)) {
+					const el = document.getElementById('resets-' + key);
+					if (el) el.textContent = ${jsonForScript(effective.strings.resetsIn)}.replace('{0}', fmt(ts - now));
+				}
+			};
+			tick();
+			setInterval(tick, 1000);
+		}
 	</script>
 </body>
 </html>`;
@@ -139,15 +163,27 @@ export class UsageDetailPanel {
 	}
 }
 
-/** Render the HTML body for the `ok` status: balance section + footer. */
+/** Render the HTML body for the `ok` status: plan header, metric bars, optional balance section, footer. */
 function renderOkBody(msg: UsagePanelMessage): string {
 	const s = msg.strings;
 	const lines: string[] = [];
+	if (msg.planName) {
+		lines.push(`<div class="plan">${escapeHtml(s.plan.replace('{0}', msg.planName))}</div>`);
+	}
+	if (msg.renewsAt) {
+		lines.push(`<div class="plan">${escapeHtml(s.renewsAt.replace('{0}', msg.renewsAt))}</div>`);
+	}
+	for (const metric of msg.metrics) {
+		const valueLabel = `${metric.used}%`;
+		lines.push(`<div class="metric">
+			<div class="metric-head"><span class="metric-label">${escapeHtml(metric.label)}</span><span class="metric-window">${escapeHtml(metric.window)}</span></div>
+			<div class="bar"><div class="bar-fill" id="fill-${escapeHtml(metric.kind)}"></div></div>
+			<div class="metric-value">${escapeHtml(valueLabel)}</div>
+			${metric.resetsAt ? `<div id="resets-${escapeHtml(metric.kind)}" class="resets"></div>` : ''}
+		</div>`);
+	}
 	if (msg.balance) {
 		lines.push(renderBalanceBody(msg));
-	}
-	if (msg.balance && msg.balance.availableBalance !== undefined && Number(msg.balance.availableBalance) <= 0) {
-		lines.push(`<div class="exhausted">${escapeHtml(s.exhausted)}</div>`);
 	}
 	if (msg.lastUpdated !== undefined) {
 		lines.push(`<div class="last-updated">${escapeHtml(s.lastUpdated.replace('{0}', new Date(msg.lastUpdated).toLocaleTimeString()))}</div>`);
@@ -158,7 +194,7 @@ function renderOkBody(msg: UsagePanelMessage): string {
 	return lines.join('');
 }
 
-/** Render the HTML for the balance section: available / voucher / cash rows. */
+/** Render the HTML for the balance section: available / voucher / cash / booster rows. */
 function renderBalanceBody(msg: UsagePanelMessage): string {
 	const s = msg.strings;
 	const b = msg.balance!;
@@ -172,6 +208,9 @@ function renderBalanceBody(msg: UsagePanelMessage): string {
 	}
 	if (b.cashBalance !== undefined) {
 		lines.push(`<div class="balance-row"><span>${escapeHtml(s.balanceCash)}</span><span class="balance-value">${escapeHtml(c)}${escapeHtml(b.cashBalance)}</span></div>`);
+	}
+	if (b.booster !== undefined) {
+		lines.push(`<div class="balance-row"><span>${escapeHtml(s.balanceBooster)}</span><span class="balance-value">${escapeHtml(c)}${escapeHtml(b.booster)}</span></div>`);
 	}
 	lines.push('</div>');
 	return lines.join('');
@@ -204,17 +243,41 @@ function themeCss(theme: 'dark' | 'light'): string {
 		h1 { font-size: 1.1rem; margin: 0; font-weight: 600; }
 		.btn { background: var(--vscode-button-background, ${accent}); color: var(--vscode-button-foreground, #fff); border: none; padding: 4px 12px; border-radius: 2px; cursor: pointer; font-size: 0.85rem; }
 		.btn:hover { opacity: 0.9; }
+		.plan { color: ${muted}; font-size: 0.9rem; margin-bottom: 2px; }
+		.metric { margin: 14px 0; padding-bottom: 14px; border-bottom: 1px solid ${border}; }
+		.metric-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+		.metric-label { font-weight: 600; }
+		.metric-window { color: ${muted}; font-size: 0.85rem; }
+		.bar { background: ${barBg}; border-radius: 2px; height: 8px; overflow: hidden; }
+		.bar-fill { background: ${accent}; height: 100%; width: 0; transition: width 0.2s; }
+		.metric-value { margin-top: 4px; font-size: 0.9rem; }
+		.resets { color: ${muted}; font-size: 0.8rem; margin-top: 2px; }
 		.balance-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid ${barBg}; }
 		.balance-section h2 { font-size: 1rem; margin-bottom: 12px; color: ${fg}; }
 		.balance-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.95rem; border-bottom: 1px solid ${border}; }
 		.balance-available { font-size: 1.15rem; font-weight: 600; border-bottom: 2px solid ${accent}; padding: 10px 0; }
 		.balance-value { font-weight: 600; }
-		.exhausted { color: #f14c4c; font-size: 0.85rem; font-weight: 600; margin-top: 12px; }
 		.last-updated { color: ${muted}; font-size: 0.8rem; margin-top: 12px; }
 		.offline { color: ${muted}; font-size: 0.8rem; font-style: italic; margin-top: 4px; }
 		.status-message { text-align: center; padding: 40px 16px; color: ${muted}; }
 		.status-message p { margin-bottom: 16px; }
 	`;
+}
+
+/** Collect `{ kind: resetsAt }` for metrics that have a reset time, to hydrate the client-side countdown. */
+function resetsAtMap(msg: UsagePanelMessage): Record<string, number> {
+	const map: Record<string, number> = {};
+	for (const m of msg.metrics) {
+		if (m.resetsAt !== undefined) {
+			map[m.kind] = m.resetsAt;
+		}
+	}
+	return map;
+}
+
+/** JSON-stringify a value for inline `<script>` interpolation, escaping `<` to prevent tag-break-out. */
+function jsonForScript(value: unknown): string {
+	return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
 /** Map the VS Code color theme to a dark/light token (high-contrast counted as dark). */

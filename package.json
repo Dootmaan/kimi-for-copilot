@@ -28,6 +28,7 @@
 		"kimi",
 		"kimi-k3",
 		"kimi-code",
+		"kimi-for-coding",
 		"kimi-k2.7-code",
 		"moonshot",
 		"moonshot ai",
@@ -38,6 +39,7 @@
 		"language model",
 		"thinking",
 		"reasoning",
+		"membership",
 		"ai",
 		"chat"
 	],
@@ -102,11 +104,11 @@
 						]
 					},
 					{
-						"id": "chooseRegion",
-						"title": "%kimi-copilot.walkthrough.chooseRegion.title%",
-						"description": "%kimi-copilot.walkthrough.chooseRegion.description%",
+						"id": "chooseApi",
+						"title": "%kimi-copilot.walkthrough.chooseApi.title%",
+						"description": "%kimi-copilot.walkthrough.chooseApi.description%",
 						"media": {
-							"markdown": "resources/walkthrough/choose-region.md"
+							"markdown": "resources/walkthrough/choose-api.md"
 						}
 					},
 					{
@@ -123,6 +125,23 @@
 		"configuration": {
 			"title": "%kimi-copilot.config.title%",
 			"properties": {
+				"kimi-copilot.apiMode": {
+					"type": "string",
+					"default": "membership",
+					"enum": [
+						"membership",
+						"standard"
+					],
+					"enumItemLabels": [
+						"%kimi-copilot.config.apiMode.membership.label%",
+						"%kimi-copilot.config.apiMode.standard.label%"
+					],
+					"markdownEnumDescriptions": [
+						"%kimi-copilot.config.apiMode.membership.description%",
+						"%kimi-copilot.config.apiMode.standard.description%"
+					],
+					"markdownDescription": "%kimi-copilot.config.apiMode.description%"
+				},
 				"kimi-copilot.region": {
 					"type": "string",
 					"default": "international",

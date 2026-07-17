@@ -3,6 +3,9 @@ import type * as vscode from 'vscode';
 export type ThinkingMode = 'enabled' | 'disabled';
 export type Region = 'international' | 'china';
 
+/** API access mode: `standard` (Kimi Open Platform, static API key + balance) or `membership` (Kimi Code, OAuth + quota). */
+export type ApiMode = 'standard' | 'membership';
+
 /**
  * How a model controls thinking:
  * - `toggle` — `kimi-k2.6` / `kimi-k2.5`: `thinking.type` is enabled/disabled by the setting.
@@ -30,6 +33,8 @@ export interface KimiModel {
 	maxInputTokens: number;
 	maxOutputTokens: number;
 	capabilities: KimiModelCapabilities;
+	/** API modes that expose this model. The picker filters built-ins by the active mode. */
+	availableIn: ApiMode[];
 }
 
 /** A user-defined model from the `customModels` setting (string id or object). */
@@ -43,9 +48,21 @@ export interface CustomModelConfig {
 	thinking?: boolean;
 }
 
-// ---- Balance tracking (Kimi Open Platform) ----
+// ---- Usage tracking (membership quota + Standard API balance) ----
 
-/** Cash + voucher balance returned by `GET /v1/users/me/balance`. */
+export type UsageMetricKind = 'session' | 'weekly' | 'web-searches';
+
+export interface UsageMetric {
+	kind: UsageMetricKind;
+	/** Percentage (0-100) for session/weekly; count used for web-searches. */
+	used: number;
+	/** 100 for session/weekly; monthly total for web-searches. */
+	limit: number;
+	/** Epoch-ms when the window resets. */
+	resetsAt?: number;
+}
+
+/** Cash + voucher balance returned by `GET /v1/users/me/balance` (Standard API). */
 export interface UsageBalance {
 	/** Available balance (cash + voucher). ≤0 means inference is blocked. */
 	availableBalance: number;
@@ -65,10 +82,48 @@ export type UsageStatus =
 
 export interface UsageSnapshot {
 	status: UsageStatus;
-	/** Cash + voucher balance. Populated on the `ok` status. */
+	/** Membership plan/tier name (membership mode only). */
+	planName?: string;
+	/** ISO date string when the membership renews (membership mode only). */
+	renewsAt?: string;
+	/** 0..2 metrics, ordered session (weekly quota %), weekly (5h window %). Membership mode only. */
+	metrics: UsageMetric[];
+	/** Cash + voucher balance. Standard API mode only. */
 	balance?: UsageBalance;
 	/** Epoch-ms of the fetch that produced this snapshot. */
 	fetchedAt: number;
+}
+
+// ---- OAuth (Kimi Code membership) ----
+
+/** A persisted OAuth token bundle from the Kimi Code device-code flow. */
+export interface OAuthToken {
+	accessToken: string;
+	refreshToken: string;
+	/** Epoch-ms when the access token expires. */
+	expiresAt: number;
+	scope: string;
+	tokenType: string;
+}
+
+/** Result of requesting a device authorization (RFC 8628 §3.2). */
+export interface DeviceAuthorization {
+	userCode: string;
+	deviceCode: string;
+	verificationUri: string;
+	verificationUriComplete?: string;
+	expiresIn: number;
+	interval: number;
+}
+
+/** Token manager for the membership (OAuth) API mode. Implemented by `oauth.ts`. */
+export interface ITokenManager {
+	getToken(): Promise<OAuthToken | undefined>;
+	/** Resolve a valid (non-expired, auto-refreshing) access token, or undefined when not logged in. */
+	getAccessToken(): Promise<string | undefined>;
+	hasToken(): Promise<boolean>;
+	login(): Promise<boolean>;
+	logout(): Promise<void>;
 }
 
 // ---- OpenAI-compatible wire types ----
