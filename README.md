@@ -4,6 +4,8 @@ Bring [Kimi](https://platform.kimi.ai/) (Moonshot AI) models — **kimi-k3**, **
 
 This extension is modeled after [`glm-for-copilot`](https://github.com/KiwiGaze/glm-for-copilot) and adapted for the Kimi (Moonshot AI) OpenAI-compatible API. Huge shout out to [@KiwiGaze](https://github.com/KiwiGaze) for his foundamental work and generous licensing.
 
+<img width="494" height="252" alt="image" src="https://github.com/user-attachments/assets/7b9a8a41-8450-4848-82a5-458e141b427f" />
+
 ## Features
 
 - 🧩 **Seamless Copilot Chat integration** — Kimi models show up in the Copilot Chat model picker via the `LanguageModelChatProvider` API (vendor `kimi`).
