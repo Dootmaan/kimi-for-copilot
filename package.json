@@ -4,17 +4,17 @@
 	"description": "Bring Kimi (Moonshot AI) models — kimi-k3, kimi-k2.7-code and kimi-k2.6 — into GitHub Copilot Chat with visible thinking. BYOK.",
 	"icon": "resources/icon.png",
     "version": "0.1.0",
-	"publisher": "kimi-for-copilot",
+	"publisher": "Dootmaan",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/kimi-for-copilot/kimi-for-copilot.git"
+		"url": "https://github.com/Dootmaan/kimi-for-copilot.git"
 	},
 	"bugs": {
-		"url": "https://github.com/kimi-for-copilot/kimi-for-copilot/issues"
+		"url": "https://github.com/Dootmaan/kimi-for-copilot/issues"
 	},
-	"homepage": "https://github.com/kimi-for-copilot/kimi-for-copilot#readme",
-	"qna": "https://github.com/kimi-for-copilot/kimi-for-copilot/issues",
+	"homepage": "https://github.com/Dootmaan/kimi-for-copilot#readme",
+	"qna": "https://github.com/Dootmaan/kimi-for-copilot/discussions",
 	"engines": {
 		"vscode": "^1.116.0",
 		"node": ">=20"

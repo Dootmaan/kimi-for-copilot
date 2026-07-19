@@ -2,7 +2,7 @@
 
 Bring [Kimi](https://platform.kimi.ai/) (Moonshot AI) models — **kimi-k3**, **kimi-k2.7-code**, **kimi-k2.7-code-highspeed**, **kimi-k2.6**, **kimi-k2.5**, and the **kimi-for-coding** membership model — directly into GitHub Copilot Chat, with visible step-by-step thinking and a built-in usage monitor. Supports both **Kimi Code membership** (OAuth) and **Standard API** (BYOK).
 
-This extension is modeled after [`glm-for-copilot`](https://github.com/KiwiGaze/glm-for-copilot) and adapted for the Kimi (Moonshot AI) OpenAI-compatible API. Huge shout out to [@KiwiGaze](https://github.com/KiwiGaze) for his foundamental work and generous licensing.
+This extension is modeled after [`glm-for-copilot`](https://github.com/Dootmaan/glm-for-copilot) and adapted for the Kimi (Moonshot AI) OpenAI-compatible API. Huge shout out to [@Dootmaan](https://github.com/Dootmaan) for his foundamental work and generous licensing.
 
 <img width="494" height="252" alt="image" src="https://github.com/user-attachments/assets/7b9a8a41-8450-4848-82a5-458e141b427f" />
 
