@@ -1,9 +1,9 @@
 {
-	"name": "kimi-for-github-copilot-chat",
+	"name": "kimi-for-copilot",
 	"displayName": "Kimi Models for GitHub Copilot Chat",
 	"description": "Bring Kimi (Moonshot AI) models — kimi-k3, kimi-k2.7-code and kimi-k2.6 — into GitHub Copilot Chat with visible thinking. BYOK.",
 	"icon": "resources/icon.png",
-    "version": "0.1.0",
+    "version": "1.0.0",
 	"publisher": "Dootmaan",
 	"license": "MIT",
 	"repository": {
