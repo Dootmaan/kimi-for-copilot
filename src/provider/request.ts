@@ -70,16 +70,17 @@ export async function prepareChatRequest({
 }
 
 /**
- * Resolve the model-specific thinking request fields:
- * - `k3`          → always `reasoning_effort: "max"` (top-level).
- * - `code`        → always `thinking: { type: "enabled", keep: "all" }`.
- * - `toggle`      → `thinking: { type: enabled|disabled }` from per-request override or setting.
+ * Resolve the model-specific thinking request fields, honoring the per-model picker toggle
+ * (`options.modelConfiguration.thinking` / `options.configuration.thinking`):
+ * - `k3`          → always `reasoning_effort: "max"` (toggle only offers "enabled").
+ * - `code`        → always `thinking: { type: "enabled", keep: "all" }` (toggle only offers "enabled").
+ * - `toggle`      → `thinking: { type: enabled|disabled }` from the picker, else the setting.
  * - no style      → none if the model is non-thinking; otherwise treated as toggle.
  */
 function resolveThinkingFields(
 	style: ThinkingStyle | undefined,
 	isThinkingModel: boolean,
-	options: vscode.ProvideLanguageModelChatResponseOptions,
+	options: ProvideChatResponseOptions,
 ): Pick<KimiChatRequest, 'thinking' | 'reasoning_effort'> {
 	if (style === 'k3') {
 		return { reasoning_effort: 'max' };
@@ -93,15 +94,20 @@ function resolveThinkingFields(
 	return {};
 }
 
-/** Thinking mode from a per-request override (modelOptions), else the setting. */
-function resolveThinking(options: vscode.ProvideLanguageModelChatResponseOptions): ThinkingMode {
-	const modelOptions = options.modelOptions as Record<string, unknown> | undefined;
-	const override = modelOptions?.['thinking'];
-	if (override === 'disabled') {
+/** Thinking mode from the per-request picker override, else the setting. */
+function resolveThinking(options: ProvideChatResponseOptions): ThinkingMode {
+	const pickerOverride = options.modelConfiguration?.thinking ?? options.configuration?.thinking;
+	if (pickerOverride === 'disabled') {
 		return 'disabled';
 	}
-	if (override === 'enabled') {
+	if (pickerOverride === 'enabled') {
 		return 'enabled';
 	}
 	return getThinking();
 }
+
+/** Augmented options type carrying the picker's `thinking` field set via `configurationSchema`. */
+type ProvideChatResponseOptions = vscode.ProvideLanguageModelChatResponseOptions & {
+	readonly modelConfiguration?: { readonly thinking?: ThinkingMode };
+	readonly configuration?: { readonly thinking?: ThinkingMode };
+};

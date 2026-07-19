@@ -54,6 +54,11 @@ const en: Record<string, string> = {
 	'thinking.off': 'Off',
 	'thinking.on.desc': 'Enable step-by-step reasoning (recommended)',
 	'thinking.off.desc': 'Disable reasoning for faster responses',
+	'thinking.toggle.enabled.label': 'On',
+	'thinking.toggle.enabled.desc': 'Enable step-by-step reasoning (recommended)',
+	'thinking.toggle.disabled.label': 'Off',
+	'thinking.toggle.disabled.desc': 'Disable reasoning for faster responses',
+	'thinking.toggle.disabled.unavailable': 'Not available — this model always reasons and cannot be turned off.',
 
 	// Request limits
 	'request.toolsLimitExceeded':
@@ -184,6 +189,11 @@ const zh: Record<string, string> = {
 	'thinking.off': '关闭',
 	'thinking.on.desc': '启用逐步推理（推荐）',
 	'thinking.off.desc': '关闭推理以获得更快响应',
+	'thinking.toggle.enabled.label': '开启',
+	'thinking.toggle.enabled.desc': '启用逐步推理（推荐）',
+	'thinking.toggle.disabled.label': '关闭',
+	'thinking.toggle.disabled.desc': '关闭推理以获得更快响应',
+	'thinking.toggle.disabled.unavailable': '不可用——该模型始终开启思考，无法关闭。',
 
 	'request.toolsLimitExceeded':
 		'Kimi 单次请求最多支持 {0} 个工具，但本次请求包含 {1} 个。请使用 VS Code 的“配置工具”关闭不常用的工具。',
