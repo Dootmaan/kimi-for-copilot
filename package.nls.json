@@ -7,7 +7,7 @@
   "kimi-copilot.command.refreshUsage": "Kimi: Refresh Usage",
   "kimi-copilot.command.openUsageDetail": "Kimi: Show Usage Details",
 
-  "kimi-copilot.walkthrough.title": "Kimi Models for GitHub Copilot Chat",
+  "kimi-copilot.walkthrough.title": "Kimi Family for Github Copilot Chat",
   "kimi-copilot.walkthrough.description": "Set up Kimi (Moonshot AI) models in GitHub Copilot Chat.",
 
   "kimi-copilot.walkthrough.setApiKey.title": "Set your Kimi API key",
@@ -19,7 +19,7 @@
   "kimi-copilot.walkthrough.showModels.title": "Show Kimi models in the picker",
   "kimi-copilot.walkthrough.showModels.description": "Your Kimi models appear in the Copilot Chat model picker, filtered by your selected API Mode. If they are hidden, open the Language Models manager to show them.\n[Open Language Models](command:workbench.action.chat.manage)",
 
-  "kimi-copilot.config.title": "Kimi Models for GitHub Copilot Chat",
+  "kimi-copilot.config.title": "Kimi Family for Github Copilot Chat",
 
   "kimi-copilot.config.apiMode.description": "Which Kimi API to use.\n\n- **Kimi Code Membership** — uses your Kimi membership subscription via OAuth device-code login. Shared quota with Kimi会员. Best for coding with a subscription.\n- **Standard API** — pay-as-you-go access via the Kimi Open Platform. The endpoint depends on the `region` setting.",
   "kimi-copilot.config.apiMode.membership.label": "Kimi Code Membership",

@@ -1,6 +1,6 @@
 {
-	"name": "kimi-for-vscode-copilot-chat",
-	"displayName": "Kimi Models for GitHub Copilot Chat",
+	"name": "kimi-family-for-github-copilot-chat",
+	"displayName": "Kimi Family for Github Copilot Chat",
 	"description": "Bring Kimi (Moonshot AI) models — kimi-k3, kimi-k2.7-code and kimi-k2.6 — into GitHub Copilot Chat with visible thinking. BYOK.",
 	"icon": "resources/icon.png",
     "version": "1.0.0",

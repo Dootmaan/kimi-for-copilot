@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in improving **Kimi Models for GitHub Copilot Chat**!
+Thanks for your interest in improving **Kimi Family for Github Copilot Chat**!
 
 ## Development setup
 

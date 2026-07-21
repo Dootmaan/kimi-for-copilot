@@ -1,4 +1,4 @@
-Kimi Models for GitHub Copilot Chat uses your own Kimi credentials to make Kimi models available in the Copilot model picker.
+Kimi Family for Github Copilot Chat uses your own Kimi credentials to make Kimi models available in the Copilot model picker.
 
 **Kimi Code Membership mode**: Two sign-in options — run `Kimi: Set API Key` and choose:
 

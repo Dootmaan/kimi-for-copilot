@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Initial release of **Kimi Models for GitHub Copilot Chat**.
+- Initial release of **Kimi Family for Github Copilot Chat**.
 - **Dual API mode** support:
   - **Kimi Code membership** (`apiMode: "membership"`) — OAuth device-code login against `https://auth.kimi.com` (client ID `17e5f671-…`). No API key needed; shared quota with Kimi会员. Exposes the `kimi-for-coding` model via `https://api.kimi.com/coding/v1`.
   - **Standard API** (`apiMode: "standard"`) — BYOK API key on the Kimi Open Platform. Exposes `kimi-k3`, `kimi-k2.7-code`, `kimi-k2.7-code-highspeed`, `kimi-k2.6`, and `kimi-k2.5`.

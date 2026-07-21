@@ -7,7 +7,7 @@
   "kimi-copilot.command.refreshUsage": "Kimi: 刷新余额",
   "kimi-copilot.command.openUsageDetail": "Kimi: 显示余额详情",
 
-  "kimi-copilot.walkthrough.title": "Kimi Models for GitHub Copilot Chat",
+  "kimi-copilot.walkthrough.title": "Kimi Family for Github Copilot Chat",
   "kimi-copilot.walkthrough.description": "在 GitHub Copilot Chat 中使用 Kimi（月之暗面）模型。",
 
   "kimi-copilot.walkthrough.setApiKey.title": "设置 Kimi API 密钥",
@@ -19,7 +19,7 @@
   "kimi-copilot.walkthrough.showModels.title": "在选择器中查看 Kimi 模型",
   "kimi-copilot.walkthrough.showModels.description": "你的 Kimi 模型将根据所选的 API 模式出现在 Copilot Chat 的模型选择器中。如果看不到，请打开语言模型管理器以显示它们。\n[打开语言模型](command:workbench.action.chat.manage)",
 
-  "kimi-copilot.config.title": "Kimi Models for GitHub Copilot Chat",
+  "kimi-copilot.config.title": "Kimi Family for Github Copilot Chat",
 
   "kimi-copilot.config.apiMode.description": "选择要使用的 Kimi API。\n\n- **Kimi Code 会员** — 通过 OAuth 设备码登录使用你的 Kimi 会员订阅，与 Kimi 会员共享额度，适合有订阅的编程场景。\n- **标准 API** — 按量付费，通过 Kimi 开放平台访问，实际端点取决于 `region` 设置。",
   "kimi-copilot.config.apiMode.membership.label": "Kimi Code 会员",
