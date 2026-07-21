@@ -76,8 +76,18 @@ export class AuthManager implements IAuthManager {
 			return false;
 		}
 		if (choice.value === 'oauth') {
-			return this.oauth.login();
+			return this.loginOAuth();
 		}
+		return this.promptForMembershipApiKey();
+	}
+
+	/** Run the OAuth device-code login flow directly (used by the Kimi: OAuth Login command). */
+	async loginOAuth(): Promise<boolean> {
+		return this.oauth.login();
+	}
+
+	/** Prompt for and store a Kimi Code membership API key (from kimi.com/code/console). */
+	private async promptForMembershipApiKey(): Promise<boolean> {
 		const value = await vscode.window.showInputBox({
 			prompt: t('auth.promptMembership'),
 			placeHolder: t('auth.placeholder'),

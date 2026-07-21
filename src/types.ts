@@ -229,10 +229,12 @@ export interface IKimiClient {
 	): Promise<void>;
 }
 
-/** API-key manager. Implemented by `auth.ts`. */
+/** Credential manager. Implemented by `auth.ts`. */
 export interface IAuthManager {
 	getApiKey(): Promise<string | undefined>;
 	hasApiKey(): Promise<boolean>;
 	promptForApiKey(): Promise<boolean>;
+	/** Run the OAuth device-code login flow directly (membership mode). */
+	loginOAuth(): Promise<boolean>;
 	deleteApiKey(): Promise<void>;
 }

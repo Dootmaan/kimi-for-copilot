@@ -14,6 +14,7 @@ export async function registerProvider(context: vscode.ExtensionContext): Promis
 	const usageBar = new UsageStatusBar(context, authManager, usageClient);
 	context.subscriptions.push(
 		vscode.commands.registerCommand('kimi-copilot.setApiKey', () => provider.configureApiKey()),
+		vscode.commands.registerCommand('kimi-copilot.oauthLogin', () => provider.loginWithOAuth()),
 		vscode.commands.registerCommand('kimi-copilot.clearApiKey', () => provider.clearApiKey()),
 		vscode.lm.registerLanguageModelChatProvider(VENDOR_ID, provider),
 		usageBar,

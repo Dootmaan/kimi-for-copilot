@@ -1,5 +1,6 @@
 {
   "kimi-copilot.command.setApiKey": "Kimi: Set API Key",
+  "kimi-copilot.command.oauthLogin": "Kimi: OAuth Login",
   "kimi-copilot.command.getApiKey": "Kimi: Get API Key",
   "kimi-copilot.command.clearApiKey": "Kimi: Clear API Key",
   "kimi-copilot.command.openSettings": "Kimi: Open Settings",
@@ -11,7 +12,7 @@
   "kimi-copilot.walkthrough.description": "Set up Kimi (Moonshot AI) models in GitHub Copilot Chat.",
 
   "kimi-copilot.walkthrough.setApiKey.title": "Set your Kimi API key",
-  "kimi-copilot.walkthrough.setApiKey.description": "**Membership mode**: run `Kimi: Set API Key` to start the OAuth device-code login flow.\n**Standard API mode**: [Get an API key](command:kimi-copilot.getApiKey) from platform.kimi.ai or platform.kimi.com.\n[Set API Key](command:kimi-copilot.setApiKey)",
+  "kimi-copilot.walkthrough.setApiKey.description": "**Membership mode** — choose how to sign in:\n- [OAuth Login](command:kimi-copilot.oauthLogin) — authorize via browser (recommended)\n- [Set API Key](command:kimi-copilot.setApiKey) — paste a key from kimi.com/code/console\n\n**Standard API mode**: [Get an API key](command:kimi-copilot.getApiKey) from platform.kimi.ai or platform.kimi.com, then [Set API Key](command:kimi-copilot.setApiKey).",
 
   "kimi-copilot.walkthrough.chooseApi.title": "Choose your Kimi API mode",
   "kimi-copilot.walkthrough.chooseApi.description": "Select between **Kimi Code Membership** (OAuth login, shared quota) and **Standard API** (pay-as-you-go, API key). For Standard API, also pick the matching region.\n[Open settings](command:kimi-copilot.openSettings)",

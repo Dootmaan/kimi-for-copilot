@@ -1,5 +1,6 @@
 {
   "kimi-copilot.command.setApiKey": "Kimi: 设置 API 密钥",
+  "kimi-copilot.command.oauthLogin": "Kimi: OAuth 登录",
   "kimi-copilot.command.getApiKey": "Kimi: 获取 API 密钥",
   "kimi-copilot.command.clearApiKey": "Kimi: 清除 API 密钥",
   "kimi-copilot.command.openSettings": "Kimi: 打开设置",
@@ -11,7 +12,7 @@
   "kimi-copilot.walkthrough.description": "在 GitHub Copilot Chat 中使用 Kimi（月之暗面）模型。",
 
   "kimi-copilot.walkthrough.setApiKey.title": "设置 Kimi API 密钥",
-  "kimi-copilot.walkthrough.setApiKey.description": "**会员模式**：运行 `Kimi: Set API Key` 启动 OAuth 设备码登录流程。\n**标准 API 模式**：[获取 API 密钥](command:kimi-copilot.getApiKey)（来自 platform.kimi.ai 或 platform.kimi.com）。\n[设置 API 密钥](command:kimi-copilot.setApiKey)",
+  "kimi-copilot.walkthrough.setApiKey.description": "**会员模式**——选择登录方式：\n- [OAuth 登录](command:kimi-copilot.oauthLogin)——浏览器授权（推荐）\n- [设置 API 密钥](command:kimi-copilot.setApiKey)——粘贴 kimi.com/code/console 的密钥\n\n**标准 API 模式**：[获取 API 密钥](command:kimi-copilot.getApiKey)（来自 platform.kimi.ai 或 platform.kimi.com），然后[设置 API 密钥](command:kimi-copilot.setApiKey)。",
 
   "kimi-copilot.walkthrough.chooseApi.title": "选择 Kimi API 模式",
   "kimi-copilot.walkthrough.chooseApi.description": "在 **Kimi Code 会员**（OAuth 登录，共享额度）和 **标准 API**（按量付费，API 密钥）之间选择。标准 API 还需选择匹配的区域。\n[打开设置](command:kimi-copilot.openSettings)",

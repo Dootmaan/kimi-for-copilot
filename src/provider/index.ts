@@ -112,6 +112,14 @@ export class KimiChatProvider implements vscode.LanguageModelChatProvider {
 		}
 	}
 
+	/** Run the OAuth device-code login flow and refresh the model picker on success. */
+	async loginWithOAuth(): Promise<void> {
+		const saved = await this.authManager.loginOAuth();
+		if (saved) {
+			this.refreshModelPicker();
+		}
+	}
+
 	async clearApiKey(): Promise<void> {
 		await this.authManager.deleteApiKey();
 		this.refreshModelPicker();
