@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { KimiClient } from '../client';
-import { findModelDefinition, getApiModelId, getMaxRetries, getMaxTokens, getThinking } from '../config';
+import { findModelDefinition, getApiModelId, getMaxRetries, getMaxTokens } from '../config';
 import { DEFAULT_TOOLS_LIMIT } from '../consts';
 import { resolveBaseUrl } from '../endpoint';
 import { t } from '../i18n';
@@ -9,8 +9,8 @@ import type {
 	IKimiClient,
 	KimiChatRequest,
 	KimiTool,
-	ThinkingMode,
-	ThinkingStyle,
+	ThinkingEffort,
+	ThinkingEffortSpec,
 } from '../types';
 import { convertMessages, convertTools, countMessageChars } from './convert';
 
@@ -46,7 +46,6 @@ export async function prepareChatRequest({
 	const client = new KimiClient(baseUrl, apiKey, extensionVersion, getMaxRetries());
 	const modelDef = findModelDefinition(modelInfo.id);
 	const isThinkingModel = modelDef?.capabilities.thinking ?? false;
-	const thinkingStyle: ThinkingStyle | undefined = modelDef?.capabilities.thinkingStyle;
 	const toolCalling = modelDef?.capabilities.toolCalling ?? false;
 	const toolLimit = typeof toolCalling === 'number' ? toolCalling : DEFAULT_TOOLS_LIMIT;
 	const kimiMessages = convertMessages(messages, isThinkingModel);
@@ -55,7 +54,8 @@ export async function prepareChatRequest({
 		throw new Error(t('request.toolsLimitExceeded', String(toolLimit), String(tools.length)));
 	}
 	const hasTools = !!(tools && tools.length > 0);
-	const thinkingFields = resolveThinkingFields(thinkingStyle, isThinkingModel, options);
+	const effortSpec = modelDef?.capabilities.thinkingEffort;
+	const thinkingFields = resolveThinkingFields(effortSpec, modelInfo.id, options);
 	const request: KimiChatRequest = {
 		model: getApiModelId(modelInfo.id),
 		messages: kimiMessages,
@@ -70,44 +70,59 @@ export async function prepareChatRequest({
 }
 
 /**
- * Resolve the model-specific thinking request fields, honoring the per-model picker toggle
- * (`options.modelConfiguration.thinking` / `options.configuration.thinking`):
- * - `k3`          → always `reasoning_effort: "max"` (toggle only offers "enabled").
- * - `code`        → always `thinking: { type: "enabled", keep: "all" }` (toggle only offers "enabled").
- * - `toggle`      → `thinking: { type: enabled|disabled }` from the picker, else the setting.
- * - no style      → none if the model is non-thinking; otherwise treated as toggle.
+ * Resolve the model-specific thinking request fields from the picker's `reasoningEffort` selection.
+ *
+ * Wire format differs by model family (confirmed from the official OpenAPI spec + MoonshotAI/kimi-code source):
+ * - `kimi-k3`: top-level `reasoning_effort: "low"|"high"|"max"` (no `thinking` object).
+ * - `kimi-k2.7-code` / `kimi-for-coding`: `thinking: { type: "enabled", effort: "low"|"high"|"max", keep: "all" }`.
+ *   These models always keep reasoning_content and always reason (no "off").
+ * - `kimi-k2.6` / `kimi-k2.5`: `thinking: { type: "enabled", effort: "low"|"high"|"max" }` — NO `keep` field
+ *   (K2.6/K2.5 default keep is null = not preserved; sending keep: "all" causes a server error on K2.5).
+ *   "off" → `thinking: { type: "disabled" }`.
  */
 function resolveThinkingFields(
-	style: ThinkingStyle | undefined,
-	isThinkingModel: boolean,
+	spec: ThinkingEffortSpec | undefined,
+	modelId: string,
 	options: ProvideChatResponseOptions,
 ): Pick<KimiChatRequest, 'thinking' | 'reasoning_effort'> {
-	if (style === 'k3') {
-		return { reasoning_effort: 'max' };
+	if (!spec) {
+		return {};
 	}
-	if (style === 'code') {
-		return { thinking: { type: 'enabled', keep: 'all' } };
+	const picked = resolveEffort(options, spec);
+	// kimi-k3 uses top-level reasoning_effort; all other models use the thinking object.
+	if (modelId === 'kimi-k3') {
+		return picked === 'off' ? {} : { reasoning_effort: picked };
 	}
-	if (style === 'toggle' || (isThinkingModel && !style)) {
-		return { thinking: { type: resolveThinking(options) } };
+	if (picked === 'off') {
+		return { thinking: { type: 'disabled' } };
 	}
-	return {};
+	// kimi-k2.7-code and kimi-for-coding always preserve thinking (keep: "all").
+	// kimi-k2.6 and kimi-k2.5 must NOT send keep (default is null = not preserved).
+	const isAlwaysKeep = modelId === 'kimi-k2.7-code' || modelId === 'kimi-k2.7-code-highspeed' || modelId === 'kimi-for-coding';
+	const thinking: { type: 'enabled'; effort: ThinkingEffort; keep?: 'all' } = {
+		type: 'enabled',
+		effort: picked,
+	};
+	if (isAlwaysKeep) {
+		thinking.keep = 'all';
+	}
+	return { thinking };
 }
 
-/** Thinking mode from the per-request picker override, else the setting. */
-function resolveThinking(options: ProvideChatResponseOptions): ThinkingMode {
-	const pickerOverride = options.modelConfiguration?.thinking ?? options.configuration?.thinking;
-	if (pickerOverride === 'disabled') {
-		return 'disabled';
+/** Resolve the thinking effort from the picker override, else the model's default. */
+function resolveEffort(options: ProvideChatResponseOptions, spec: ThinkingEffortSpec): ThinkingEffort | 'off' {
+	const picked = options.modelConfiguration?.reasoningEffort ?? options.configuration?.reasoningEffort;
+	if (picked === 'off' && spec.canDisable) {
+		return 'off';
 	}
-	if (pickerOverride === 'enabled') {
-		return 'enabled';
+	if (picked && spec.levels.includes(picked as ThinkingEffort)) {
+		return picked as ThinkingEffort;
 	}
-	return getThinking();
+	return spec.default;
 }
 
-/** Augmented options type carrying the picker's `thinking` field set via `configurationSchema`. */
+/** Augmented options type carrying the picker's `reasoningEffort` field set via `configurationSchema`. */
 type ProvideChatResponseOptions = vscode.ProvideLanguageModelChatResponseOptions & {
-	readonly modelConfiguration?: { readonly thinking?: ThinkingMode };
-	readonly configuration?: { readonly thinking?: ThinkingMode };
+	readonly modelConfiguration?: { readonly reasoningEffort?: string };
+	readonly configuration?: { readonly reasoningEffort?: string };
 };

@@ -15,7 +15,7 @@ This extension is modeled after [`glm-for-copilot`](https://github.com/KiwiGaze/
 ## Features
 
 - 🧩 **Seamless Copilot Chat integration** — Kimi models show up in the Copilot Chat model picker via the `LanguageModelChatProvider` API (vendor `kimi`).
-- 🧠 **Visible thinking** — Kimi's `reasoning_content` streams as Copilot Chat thinking parts. `kimi-k3` / `kimi-k2.7-code` / `kimi-for-coding` always reason; `kimi-k2.6` / `kimi-k2.5` are toggleable.
+- 🧠 **Visible thinking with effort control** — Kimi's `reasoning_content` streams as Copilot Chat thinking parts. A **Low / High / Max** thinking effort selector appears next to the model picker for all models. `kimi-k3` / `kimi-k2.7-code` / `kimi-for-coding` always reason (no "Off"); `kimi-k2.6` / `kimi-k2.5` also offer "Off".
 - 🛠️ **Tool calling** — full function/tool support (up to 128 tools) for agentic workflows.
 - 🏆 **Kimi Code membership support** — sign in via OAuth device-code login (browser) **or** paste a Kimi Code Console API key from [kimi.com/code/console](https://www.kimi.com/code/console). Shared quota with Kimi会员, tracked via the `/coding/v1/usages` endpoint (weekly quota %, 5-hour window, and Booster/Extra-Usage wallet).
 - 💰 **Balance monitoring** — for the Standard API, a status-bar item and detail panel show your available / voucher / cash balance via `GET /v1/users/me/balance`. The bar turns red when exhausted.
@@ -52,7 +52,7 @@ This extension is modeled after [`glm-for-copilot`](https://github.com/KiwiGaze/
 | `kimi-copilot.baseUrl`                     | `""`            | Override the API base URL. When set, `apiMode` and `region` are ignored.                                                         |
 | `kimi-copilot.maxTokens`                   | `0`             | Max output tokens (`0` = API default).                                                                           |
 | `kimi-copilot.maxRetries`                  | `3`             | Auto-retries for transient failures (429 / 5xx).                                                                   |
-| `kimi-copilot.thinking`                    | `enabled`       | Thinking toggle for `kimi-k2.6` / `kimi-k2.5`.                                                                  |
+| `kimi-copilot.thinking`                    | `enabled`       | Default thinking state for `kimi-k2.6` / `kimi-k2.5` (overridden by the picker effort selector). |
 | `kimi-copilot.customModels`                | `[]`            | Add your own model ids to the picker.                                                                              |
 | `kimi-copilot.modelIdOverrides`            | `{}`            | Remap built-in model ids for proxies.                                                                              |
 | `kimi-copilot.showUsageStatusBar`          | `true`          | Show the usage status-bar item.                                                                                  |
@@ -62,6 +62,7 @@ This extension is modeled after [`glm-for-copilot`](https://github.com/KiwiGaze/
 ## Commands
 
 - `Kimi: Set API Key`
+- `Kimi: OAuth Login`
 - `Kimi: Get API Key`
 - `Kimi: Clear API Key`
 - `Kimi: Refresh Usage`

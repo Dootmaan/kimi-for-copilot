@@ -1,44 +1,30 @@
 import * as vscode from 'vscode';
 import { t } from '../i18n';
-import type { KimiModel, ThinkingStyle } from '../types';
+import type { KimiModel, ThinkingEffortSpec } from '../types';
 
-/** Whether a model allows turning thinking OFF (toggle) or forces it always ON (k3, code). */
-export function canDisableThinking(style: ThinkingStyle | undefined): boolean {
-	return style !== 'k3' && style !== 'code';
-}
-
-/** Default thinking level for a model's toggle. Always-on models default to enabled. */
-export function thinkingDefault(_style: ThinkingStyle | undefined): 'enabled' | 'disabled' {
-	return 'enabled';
-}
-
-/**
- * Build the per-model `configurationSchema` that renders the thinking toggle next to the model picker.
- *
- * Both "On" and "Off" are always offered so users see the option exists. For always-on models
- * (`k3`, `code`), the "Off" entry's description explains the model doesn't support disabling
- * thinking, and `request.ts` defensively ignores any "disabled" selection for those models —
- * effectively keeping it always on.
- */
-function buildThinkingSchema(style: ThinkingStyle | undefined) {
-	const disableable = canDisableThinking(style);
+/** Build the per-model `configurationSchema` that renders the thinking effort picker. */
+function buildThinkingSchema(spec: ThinkingEffortSpec) {
+	// Always include "off" in the enum so Copilot Chat's persisted value is always valid.
+	// For always-on models, the "off" entry's description explains it's unavailable.
+	const enumValues: string[] = ['off', ...spec.levels];
+	const enumLabels = enumValues.map((level) =>
+		level === 'off' ? t('effort.off.label') : t(`effort.${level}.label`),
+	);
+	const enumDescs = enumValues.map((level) => {
+		if (level === 'off') {
+			return spec.canDisable ? t('effort.off.desc') : t('effort.off.unavailable');
+		}
+		return t(`effort.${level}.desc`);
+	});
 	return {
 		properties: {
-			thinking: {
+			reasoningEffort: {
 				type: 'string',
-				title: t('thinking.title'),
-				enum: ['enabled', 'disabled'] as const,
-				enumItemLabels: [
-					t('thinking.toggle.enabled.label'),
-					t('thinking.toggle.disabled.label'),
-				],
-				enumDescriptions: [
-					t('thinking.toggle.enabled.desc'),
-					disableable
-						? t('thinking.toggle.disabled.desc')
-						: t('thinking.toggle.disabled.unavailable'),
-				],
-				default: 'enabled',
+				title: t('effort.title'),
+				enum: enumValues,
+				enumItemLabels: enumLabels,
+				enumDescriptions: enumDescs,
+				default: spec.default,
 				group: 'navigation',
 			},
 		},
@@ -54,7 +40,7 @@ type ThinkingChatInformation = vscode.LanguageModelChatInformation & {
 export function toChatInfo(model: KimiModel, hasApiKey: boolean): ThinkingChatInformation {
 	const detail = resolveModelText(model, 'detail') ?? model.detail;
 	const tooltip = resolveModelText(model, 'tooltip');
-	const style = model.capabilities.thinking ? model.capabilities.thinkingStyle : undefined;
+	const spec = model.capabilities.thinkingEffort;
 	return {
 		id: model.id,
 		name: model.name,
@@ -68,8 +54,8 @@ export function toChatInfo(model: KimiModel, hasApiKey: boolean): ThinkingChatIn
 			toolCalling: model.capabilities.toolCalling,
 			imageInput: model.capabilities.imageInput,
 		},
-		// Only thinking-capable models get the toggle.
-		...(model.capabilities.thinking ? { configurationSchema: buildThinkingSchema(style) } : {}),
+		// Only thinking-capable models with an effort spec get the picker.
+		...(spec ? { configurationSchema: buildThinkingSchema(spec) } : {}),
 	};
 }
 

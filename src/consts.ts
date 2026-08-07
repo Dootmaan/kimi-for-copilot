@@ -1,4 +1,4 @@
-import type { KimiModel } from './types';
+import type { KimiModel, ThinkingEffortSpec } from './types';
 
 /**
  * Compile-time constants shared across the extension. These do not depend on
@@ -104,6 +104,20 @@ export const URI_PATHS = {
 	showLogs: '/showLogs',
 } as const;
 
+/** Effort spec for always-on models (k3, k2.7-code): low/high/max, no "off". */
+const EFFORT_ALWAYS_ON: ThinkingEffortSpec = {
+	levels: ['low', 'high', 'max'],
+	default: 'high',
+	canDisable: false,
+};
+
+/** Effort spec for toggleable models (k2.6, k2.5): off/low/high/max. */
+const EFFORT_TOGGLEABLE: ThinkingEffortSpec = {
+	levels: ['low', 'high', 'max'],
+	default: 'high',
+	canDisable: true,
+};
+
 /** Built-in Kimi models exposed through the language model provider. */
 export const MODELS: KimiModel[] = [
 	{
@@ -114,7 +128,7 @@ export const MODELS: KimiModel[] = [
 		detail: 'Kimi Code membership model, 256K context',
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,
-		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'code' },
+		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'effort', thinkingEffort: EFFORT_ALWAYS_ON },
 		availableIn: ['membership'],
 	},
 	{
@@ -125,7 +139,7 @@ export const MODELS: KimiModel[] = [
 		detail: 'Flagship model, 1M context, always reasons',
 		maxInputTokens: 1_000_000,
 		maxOutputTokens: 131_072,
-		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'k3' },
+		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'effort', thinkingEffort: EFFORT_ALWAYS_ON },
 		availableIn: ['standard'],
 	},
 	{
@@ -136,7 +150,7 @@ export const MODELS: KimiModel[] = [
 		detail: 'Coding model, 256K context, always reasons',
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,
-		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'code' },
+		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'effort', thinkingEffort: EFFORT_ALWAYS_ON },
 		availableIn: ['standard'],
 	},
 	{
@@ -147,7 +161,7 @@ export const MODELS: KimiModel[] = [
 		detail: 'High-speed coding model (~180 tokens/s)',
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,
-		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'code' },
+		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'effort', thinkingEffort: EFFORT_ALWAYS_ON },
 		availableIn: ['standard'],
 	},
 	{
@@ -158,7 +172,7 @@ export const MODELS: KimiModel[] = [
 		detail: 'General model, 256K context',
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,
-		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'toggle' },
+		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'effort', thinkingEffort: EFFORT_TOGGLEABLE },
 		availableIn: ['standard'],
 	},
 	{
@@ -169,7 +183,7 @@ export const MODELS: KimiModel[] = [
 		detail: 'General model, 256K context',
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,
-		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'toggle' },
+		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'effort', thinkingEffort: EFFORT_TOGGLEABLE },
 		availableIn: ['standard'],
 	},
 ];

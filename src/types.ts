@@ -3,16 +3,31 @@ import type * as vscode from 'vscode';
 export type ThinkingMode = 'enabled' | 'disabled';
 export type Region = 'international' | 'china';
 
+/** Thinking effort levels supported by Kimi models (via top-level `reasoning_effort`). */
+export type ThinkingEffort = 'low' | 'high' | 'max';
+
 /** API access mode: `standard` (Kimi Open Platform, static API key + balance) or `membership` (Kimi Code, OAuth + quota). */
 export type ApiMode = 'standard' | 'membership';
 
 /**
  * How a model controls thinking:
- * - `toggle` — `kimi-k2.6` / `kimi-k2.5`: `thinking.type` is enabled/disabled by the setting.
- * - `code` — `kimi-k2.7-code` series: thinking always on, `thinking: { type: "enabled", keep: "all" }`.
- * - `k3` — `kimi-k3`: always reasons via top-level `reasoning_effort: "max"`.
+ * - `effort` — all current Kimi models: uses top-level `reasoning_effort` with selectable levels.
+ *   Always-on models (k3, code) omit "off" from the picker; toggleable models (k2.6, k2.5) include it.
+ * - `toggle` — legacy fallback: `thinking.type` enabled/disabled (no effort levels).
+ * - `code` — legacy: thinking always on, `thinking: { type: "enabled", keep: "all" }`.
+ * - `k3` — legacy: always reasons via `reasoning_effort: "max"`.
  */
-export type ThinkingStyle = 'toggle' | 'code' | 'k3';
+export type ThinkingStyle = 'effort' | 'toggle' | 'code' | 'k3';
+
+/** Spec for models that support selectable thinking effort levels. */
+export interface ThinkingEffortSpec {
+	/** Effort levels shown in the picker, in order (low → high). */
+	levels: ThinkingEffort[];
+	/** Level used when the user has not chosen one. */
+	default: ThinkingEffort;
+	/** Whether the model allows turning thinking OFF (adds "off" to the picker). */
+	canDisable: boolean;
+}
 
 export interface KimiModelCapabilities {
 	/** `true` enables tool calling with the default cap; a number sets a custom cap. */
@@ -21,6 +36,8 @@ export interface KimiModelCapabilities {
 	thinking: boolean;
 	/** Present ⇒ model-specific thinking control. Absent ⇒ treated as not thinking-capable. */
 	thinkingStyle?: ThinkingStyle;
+	/** Present ⇒ model supports selectable thinking effort levels. */
+	thinkingEffort?: ThinkingEffortSpec;
 }
 
 /** A Kimi model exposed in the Copilot Chat picker. */
@@ -160,8 +177,10 @@ export interface KimiChatRequest {
 	tools?: KimiTool[];
 	tool_choice?: 'auto' | 'none';
 	max_tokens?: number;
-	thinking?: { type: ThinkingMode; keep?: 'all' };
-	reasoning_effort?: 'max';
+	/** K2.x thinking control: `type` + optional `effort` (low/high/max) + `keep`. */
+	thinking?: { type: ThinkingMode; effort?: ThinkingEffort; keep?: 'all' };
+	/** K3 top-level reasoning effort (low/high/max). */
+	reasoning_effort?: ThinkingEffort;
 	stream_options?: { include_usage: boolean };
 }
 

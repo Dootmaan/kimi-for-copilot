@@ -48,17 +48,17 @@ const en: Record<string, string> = {
 	'oauth.startFailed': 'Failed to start Kimi Code login. Check your network and try again.',
 	'oauth.tokenFailed': 'Kimi Code login failed: {0}',
 
-	// Thinking control
-	'thinking.title': 'Thinking',
-	'thinking.on': 'On',
-	'thinking.off': 'Off',
-	'thinking.on.desc': 'Enable step-by-step reasoning (recommended)',
-	'thinking.off.desc': 'Disable reasoning for faster responses',
-	'thinking.toggle.enabled.label': 'On',
-	'thinking.toggle.enabled.desc': 'Enable step-by-step reasoning (recommended)',
-	'thinking.toggle.disabled.label': 'Off',
-	'thinking.toggle.disabled.desc': 'Disable reasoning for faster responses',
-	'thinking.toggle.disabled.unavailable': 'Not available — this model always reasons and cannot be turned off.',
+	// Thinking effort control
+	'effort.title': 'Thinking Effort',
+	'effort.off.label': 'Off',
+	'effort.off.desc': 'Disable reasoning for faster responses',
+	'effort.off.unavailable': 'Not available — this model always reasons and cannot be turned off.',
+	'effort.low.label': 'Low',
+	'effort.low.desc': 'Light reasoning — fastest, lowest cost',
+	'effort.high.label': 'High',
+	'effort.high.desc': 'Balanced reasoning (recommended)',
+	'effort.max.label': 'Max',
+	'effort.max.desc': 'Deepest reasoning — best for hard coding, uses more quota',
 
 	// Request limits
 	'request.toolsLimitExceeded':
@@ -184,16 +184,16 @@ const zh: Record<string, string> = {
 	'oauth.startFailed': '启动 Kimi Code 登录失败，请检查网络后重试。',
 	'oauth.tokenFailed': 'Kimi Code 登录失败：{0}',
 
-	'thinking.title': '思考',
-	'thinking.on': '开启',
-	'thinking.off': '关闭',
-	'thinking.on.desc': '启用逐步推理（推荐）',
-	'thinking.off.desc': '关闭推理以获得更快响应',
-	'thinking.toggle.enabled.label': '开启',
-	'thinking.toggle.enabled.desc': '启用逐步推理（推荐）',
-	'thinking.toggle.disabled.label': '关闭',
-	'thinking.toggle.disabled.desc': '关闭推理以获得更快响应',
-	'thinking.toggle.disabled.unavailable': '不可用——该模型始终开启思考，无法关闭。',
+	'effort.title': '思考强度',
+	'effort.off.label': '关闭',
+	'effort.off.desc': '关闭推理以获得更快响应',
+	'effort.off.unavailable': '不可用——该模型始终开启思考，无法关闭。',
+	'effort.low.label': '低',
+	'effort.low.desc': '轻度推理——最快、消耗最低',
+	'effort.high.label': '高',
+	'effort.high.desc': '均衡推理（推荐）',
+	'effort.max.label': '最高',
+	'effort.max.desc': '最深入的推理——适合复杂编程，消耗更多额度',
 
 	'request.toolsLimitExceeded':
 		'Kimi 单次请求最多支持 {0} 个工具，但本次请求包含 {1} 个。请使用 VS Code 的“配置工具”关闭不常用的工具。',
