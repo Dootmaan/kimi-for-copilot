@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
-import { getApiMode, getBaseUrlOverride, getRegion, getShowUsageStatusBar, getUsageRefreshIntervalMinutes } from '../config';
-import { API_KEY_SECRET, USAGE_CACHE_STALE_MS, USAGE_MANUAL_DEBOUNCE_MS } from '../consts';
+import { findPositiveStandardBalance } from '../access';
+import { getApiMode, getBaseUrlOverride, getRegion, getShowUsageStatusBar, getUsageRefreshIntervalMinutes, updateApiMode, updateRegion } from '../config';
+import { API_KEY_SECRET, MEMBERSHIP_API_KEY_SECRET, OAUTH_TOKEN_SECRET, STANDARD_API_KEY_SECRET, USAGE_CACHE_STALE_MS, USAGE_MANUAL_DEBOUNCE_MS } from '../consts';
 import { isAbortError } from '../client/errors';
 import type { IUsageClient } from '../client/usage';
 import { t } from '../i18n';
@@ -10,6 +11,10 @@ import { formatAmount } from './format';
 import { buildUsageMessage, type UsagePanelMessage } from './usage-detail-html';
 import { UsageDetailPanel } from './usage-detail-panel';
 import { usagePanelStrings } from './usage-strings';
+
+interface UsageStatusBarServices {
+	findPositiveStandardBalance?: typeof findPositiveStandardBalance;
+}
 
 /**
  * Status-bar item showing Kimi usage. Membership mode shows weekly/5h quota % + booster balance;
@@ -23,6 +28,7 @@ export class UsageStatusBar implements vscode.Disposable {
 	private readonly item: vscode.StatusBarItem;
 	private readonly client: IUsageClient;
 	private readonly auth: IAuthManager;
+	private readonly findPositiveStandardBalanceImpl: typeof findPositiveStandardBalance;
 
 	private refreshPromise: Promise<void> | null = null;
 	private lastFetchAt = 0;
@@ -32,14 +38,18 @@ export class UsageStatusBar implements vscode.Disposable {
 	private readonly _onDidChange = new vscode.EventEmitter<UsagePanelMessage | null>();
 	readonly onDidChangeSnapshot = this._onDidChange.event;
 	private lastRendered: UsagePanelMessage | null = null;
+	private autoSwitchPromptOpen = false;
+	private promptedForCurrentExhaustion = false;
 
 	constructor(
 		context: vscode.ExtensionContext,
 		auth: IAuthManager,
 		client: IUsageClient,
+		services: UsageStatusBarServices = {},
 	) {
 		this.auth = auth;
 		this.client = client;
+		this.findPositiveStandardBalanceImpl = services.findPositiveStandardBalance ?? findPositiveStandardBalance;
 		this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 50);
 		this.item.command = 'kimi-copilot.openUsageDetail';
 		this.item.name = 'Kimi Usage';
@@ -58,7 +68,12 @@ export class UsageStatusBar implements vscode.Disposable {
 				}
 			}),
 			context.secrets.onDidChange((event) => {
-				if (event.key === API_KEY_SECRET) {
+				if (
+					event.key === API_KEY_SECRET
+					|| event.key === STANDARD_API_KEY_SECRET
+					|| event.key === MEMBERSHIP_API_KEY_SECRET
+					|| event.key === OAUTH_TOKEN_SECRET
+				) {
 					void this.onConfigOrKeyChange().catch((error) => logger.warn('Usage gate check failed', error));
 				}
 			}),
@@ -114,6 +129,7 @@ export class UsageStatusBar implements vscode.Disposable {
 				this.lastOk = snapshot;
 			}
 			this.render(snapshot);
+			await this.maybeOfferStandardFallback(snapshot, controller.signal);
 		} catch (error) {
 			if (isAbortError(error)) {
 				logger.warn('Usage fetch aborted');
@@ -121,6 +137,49 @@ export class UsageStatusBar implements vscode.Disposable {
 			}
 			logger.warn('Usage fetch threw', error);
 			this.render({ status: 'network-error', metrics: [], fetchedAt: Date.now() });
+		}
+	}
+
+	private async maybeOfferStandardFallback(snapshot: UsageSnapshot, signal: AbortSignal): Promise<void> {
+		if (getApiMode() !== 'membership' || snapshot.status !== 'ok' || snapshot.metrics.length === 0) {
+			this.promptedForCurrentExhaustion = false;
+			return;
+		}
+		const exhausted = snapshot.metrics.some((metric) => metric.limit > 0 && metric.used >= metric.limit);
+		if (!exhausted) {
+			this.promptedForCurrentExhaustion = false;
+			return;
+		}
+		if (this.promptedForCurrentExhaustion || this.autoSwitchPromptOpen) {
+			return;
+		}
+		const standardApiKey = await this.auth.getApiKeyForMode('standard');
+		if (!standardApiKey) {
+			return;
+		}
+		const fallback = await this.findPositiveStandardBalanceImpl(standardApiKey, undefined, signal);
+		if (!fallback) {
+			return;
+		}
+		this.autoSwitchPromptOpen = true;
+		try {
+			const regionLabel = fallback.region === 'china' ? t('region.china') : t('region.international');
+			const currency = fallback.region === 'china' ? '¥' : '$';
+			const balance = formatAmount(fallback.snapshot.balance?.availableBalance ?? 0);
+			const choice = await vscode.window.showWarningMessage(
+				t('usage.switchToStandard.prompt', regionLabel, `${currency}${balance}`),
+				t('usage.switchToStandard.confirm'),
+				t('usage.switchToStandard.cancel'),
+			);
+			this.promptedForCurrentExhaustion = true;
+			if (choice !== t('usage.switchToStandard.confirm')) {
+				return;
+			}
+			await updateRegion(fallback.region);
+			await updateApiMode('standard');
+			vscode.window.showInformationMessage(t('usage.switchToStandard.done', regionLabel));
+		} finally {
+			this.autoSwitchPromptOpen = false;
 		}
 	}
 
@@ -283,6 +342,7 @@ export class UsageStatusBar implements vscode.Disposable {
 		this.controller?.abort();
 		this.refreshPromise = null;
 		this.lastOk = null;
+		this.promptedForCurrentExhaustion = false;
 		const gate = await this.evaluateGate();
 		if (!gate.passed) {
 			this.item.hide();

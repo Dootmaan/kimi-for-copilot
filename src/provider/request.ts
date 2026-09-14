@@ -73,11 +73,15 @@ export async function prepareChatRequest({
  * Resolve the model-specific thinking request fields from the picker's `reasoningEffort` selection.
  *
  * Wire format differs by model family (confirmed from the official OpenAPI spec + MoonshotAI/kimi-code source):
- * - `kimi-k3`: top-level `reasoning_effort: "low"|"high"|"max"` (no `thinking` object).
- * - `kimi-k2.7-code` / `kimi-for-coding`: `thinking: { type: "enabled", effort: "low"|"high"|"max", keep: "all" }`.
- *   These models always keep reasoning_content and always reason (no "off").
- * - `kimi-k2.6` / `kimi-k2.5`: `thinking: { type: "enabled", effort: "low"|"high"|"max" }` — NO `keep` field
- *   (K2.6/K2.5 default keep is null = not preserved; sending keep: "all" causes a server error on K2.5).
+ * - Open Platform `kimi-k3`: top-level `reasoning_effort: "low"|"high"|"max"` (no `thinking` object).
+ * - Kimi Code `k3`, `k3-256k`, `kimi-for-coding`: `thinking: { type: "enabled", effort: "low"|"high"|"max" }`.
+ *   When `off` is selected, Kimi Code routes K3/K2.8 to the K2.8 no-thinking backend.
+ * - `kimi-k2.7-code` / `kimi-k2.7-code-highspeed` / `kimi-for-coding-highspeed`: `thinking: { type: "enabled", keep: "all" }`
+ *   or `thinking: { type: "enabled", effort: "low"|"high"|"max", keep: "all" }` when the backend supports effort.
+ *   In this extension, `kimi-k2.7-code*` stays always-on with preserved thinking; `kimi-for-coding-highspeed` is exposed
+ *   as a boolean always-on model with no effort picker.
+ * - `kimi-k2.6`: `thinking: { type: "enabled", effort: "low"|"high"|"max" }` — NO `keep` field
+ *   (K2.6 default keep is null = not preserved).
  *   "off" → `thinking: { type: "disabled" }`.
  */
 function resolveThinkingFields(
@@ -85,20 +89,30 @@ function resolveThinkingFields(
 	modelId: string,
 	options: ProvideChatResponseOptions,
 ): Pick<KimiChatRequest, 'thinking' | 'reasoning_effort'> {
+	if (modelId === 'kimi-for-coding-highspeed') {
+		return { thinking: { type: 'enabled', keep: 'all' } };
+	}
 	if (!spec) {
 		return {};
 	}
 	const picked = resolveEffort(options, spec);
-	// kimi-k3 uses top-level reasoning_effort; all other models use the thinking object.
-	if (modelId === 'kimi-k3') {
-		return picked === 'off' ? {} : { reasoning_effort: picked };
+	// K3-family models and Kimi Code's K2.8 Preview expose effort via top-level reasoning_effort.
+	if (
+		modelId === 'kimi-k3' ||
+		modelId === 'k3' ||
+		modelId === 'k3-256k' ||
+		modelId === 'kimi-for-coding'
+	) {
+		return picked === 'off' ? { thinking: { type: 'disabled' } } : { reasoning_effort: picked };
 	}
 	if (picked === 'off') {
 		return { thinking: { type: 'disabled' } };
 	}
-	// kimi-k2.7-code and kimi-for-coding always preserve thinking (keep: "all").
-	// kimi-k2.6 and kimi-k2.5 must NOT send keep (default is null = not preserved).
-	const isAlwaysKeep = modelId === 'kimi-k2.7-code' || modelId === 'kimi-k2.7-code-highspeed' || modelId === 'kimi-for-coding';
+	// Only K2.7-family / highspeed membership models force preserved thinking by default.
+	// K3/K2.8 in Kimi Code and K2.6 in Open Platform must NOT send keep unless explicitly supported.
+	const isAlwaysKeep =
+		modelId === 'kimi-k2.7-code' ||
+		modelId === 'kimi-k2.7-code-highspeed';
 	const thinking: { type: 'enabled'; effort: ThinkingEffort; keep?: 'all' } = {
 		type: 'enabled',
 		effort: picked,

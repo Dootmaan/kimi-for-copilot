@@ -1,6 +1,6 @@
 # Kimi Family for Github Copilot Chat
 
-Bring [Kimi](https://platform.kimi.ai/) (Moonshot AI) models — **kimi-k3**, **kimi-k2.7-code**, **kimi-k2.7-code-highspeed**, **kimi-k2.6**, **kimi-k2.5**, and the **kimi-for-coding** membership model — directly into GitHub Copilot Chat, with visible step-by-step thinking and a built-in usage monitor. Supports both **Kimi Code membership** (OAuth) and **Standard API** (BYOK).
+Bring the latest [Kimi](https://platform.kimi.ai/) (Moonshot AI) lineup directly into GitHub Copilot Chat, with visible step-by-step thinking and a built-in usage monitor. **Kimi Code membership** mode exposes **k3**, **k3-256k**, **kimi-for-coding** (now K2.8 Preview under the same ID), and **kimi-for-coding-highspeed**. **Standard API** mode exposes **kimi-k3**, **kimi-k2.7-code**, **kimi-k2.7-code-highspeed**, and **kimi-k2.6**.
 
 
 Install the Extension from [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=Dootmaan.kimi-family-for-github-copilot-chat) or search `Kimi Family for Github Copilot Chat` in VSCode Extension Store.
@@ -15,11 +15,13 @@ This extension is modeled after [`glm-for-copilot`](https://github.com/KiwiGaze/
 ## Features
 
 - 🧩 **Seamless Copilot Chat integration** — Kimi models show up in the Copilot Chat model picker via the `LanguageModelChatProvider` API (vendor `kimi`).
-- 🧠 **Visible thinking with effort control** — Kimi's `reasoning_content` streams as Copilot Chat thinking parts. A **Low / High / Max** thinking effort selector appears next to the model picker for all models. `kimi-k3` / `kimi-k2.7-code` / `kimi-for-coding` always reason (no "Off"); `kimi-k2.6` / `kimi-k2.5` also offer "Off".
+- 🧠 **Visible thinking with effort control** — Kimi's `reasoning_content` streams as Copilot Chat thinking parts. Kimi Code `k3`, `k3-256k`, and `kimi-for-coding` expose **Low / High / Max** effort and can route to a no-thinking backend when set to **Off**. `kimi-for-coding-highspeed` stays always-on. In Standard API mode, `kimi-k3` and the K2.7 code family always reason, while `kimi-k2.6` also offers **Off**.
 - 🛠️ **Tool calling** — full function/tool support (up to 128 tools) for agentic workflows.
 - 🏆 **Kimi Code membership support** — sign in via OAuth device-code login (browser) **or** paste a Kimi Code Console API key from [kimi.com/code/console](https://www.kimi.com/code/console). Shared quota with Kimi会员, tracked via the `/coding/v1/usages` endpoint (weekly quota %, 5-hour window, and Booster/Extra-Usage wallet).
+- 🧭 **Automatic mode + region detection** — when you paste an API key, the extension checks Kimi Code membership plus both Open Platform regions and updates `apiMode` / `region` automatically when it can.
+- 🔁 **Confirmed API fallback** — if Membership quota is exhausted and you already have a Standard API key with positive balance, the extension offers a one-click switch to Standard API after user confirmation.
 - 💰 **Balance monitoring** — for the Standard API, a status-bar item and detail panel show your available / voucher / cash balance via `GET /v1/users/me/balance`. The bar turns red when exhausted.
-- 🔐 **Secure credential storage** — OAuth tokens and API keys both live in VS Code SecretStorage (OS keychain), never in `settings.json`.
+- 🔐 **Secure credential storage** — OAuth tokens, membership API keys, and Standard API keys all live in VS Code SecretStorage (OS keychain), never in `settings.json`.
 - 🌏 **International + Mainland China** — `platform.kimi.ai` (`api.moonshot.ai`) and `platform.kimi.com` (`api.moonshot.cn`) for Standard API; global `api.kimi.com` for membership.
 - 🔁 **Resilient streaming** — automatic retries with exponential backoff for HTTP 429 / 5xx.
 - 📝 **Token usage reporting** — per-request usage (prompt / completion / total / cached) is forwarded to Copilot Chat.
@@ -29,34 +31,38 @@ This extension is modeled after [`glm-for-copilot`](https://github.com/KiwiGaze/
 ### Option A: Kimi Code membership (OAuth or API key)
 
 1. Install the extension.
-2. Set `kimi-copilot.apiMode` to **Kimi Code Membership**.
-3. Run **`Kimi: Set API Key`** and choose:
+2. Run **`Kimi: OAuth Login`** for the cleanest membership flow, or run **`Kimi: Set API Key`** and choose:
    - **Sign in with browser (OAuth)** — opens a browser for the Kimi device-code login flow (recommended), **or**
-   - **Paste an API key** — use a key from [kimi.com/code/console](https://www.kimi.com/code/console).
-4. Pick the **kimi-for-coding** model in the Copilot Chat model picker.
+   - **Paste an API key** — paste any Kimi key. Kimi Code keys stay in Membership mode; Open Platform keys are detected automatically.
+4. Pick one of the Kimi Code membership models in the Copilot Chat model picker: **k3**, **k3-256k**, **kimi-for-coding** (K2.8 Preview), or **kimi-for-coding-highspeed**.
 
 ### Option B: Standard API (pay-as-you-go)
 
 1. Install the extension.
-2. Set `kimi-copilot.apiMode` to **Standard API** and pick the matching `region`.
-3. Create an API key at [platform.kimi.ai/console/api-keys](https://platform.kimi.ai/console/api-keys) (International) or [platform.kimi.com/console/api-keys](https://platform.kimi.com/console/api-keys) (Mainland China).
-4. Run **`Kimi: Set API Key`** and paste it.
-5. Pick a Kimi model (kimi-k3, kimi-k2.7-code, etc.) in the Copilot Chat model picker.
+2. Create an API key at [platform.kimi.ai/console/api-keys](https://platform.kimi.ai/console/api-keys) (International) or [platform.kimi.com/console/api-keys](https://platform.kimi.com/console/api-keys) (Mainland China).
+3. Run **`Kimi: Set API Key`** and paste it. The extension auto-detects whether the key belongs to the International or Mainland China platform and updates `region` for you.
+5. Pick a Standard API model in the Copilot Chat model picker: **kimi-k3**, **kimi-k2.7-code**, **kimi-k2.7-code-highspeed**, or **kimi-k2.6**.
+
+## Automatic switching
+
+- After **`Kimi: Set API Key`**, the extension probes Kimi Code membership plus both Standard API regions and stores the key in the correct credential slot automatically.
+- If you are already signed into Membership mode through OAuth or a saved membership key, entering a Standard API key does **not** force an immediate mode switch. It is saved as a Standard API fallback instead.
+- When membership quota is exhausted, the usage status bar checks whether a saved Standard API key has positive balance. If it does, the extension prompts you before switching to Standard API and setting the detected region.
 
 ## Configuration
 
 | Setting                                      | Default           | Description                                                                                                        |
 | -------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `kimi-copilot.apiMode`                     | `membership`    | `membership` (Kimi Code OAuth) or `standard` (Kimi Open Platform API key). |
-| `kimi-copilot.region`                      | `international` | `international` → `api.moonshot.ai`; `china` → `api.moonshot.cn`. Standard API only; must match where your key was created. |
+| `kimi-copilot.apiMode`                     | `membership`    | Active access mode. Usually updated automatically after OAuth login or `Kimi: Set API Key`, but you can still override it manually. |
+| `kimi-copilot.region`                      | `international` | `international` → `api.moonshot.ai`; `china` → `api.moonshot.cn`. Standard API only. Usually auto-detected after `Kimi: Set API Key`. |
 | `kimi-copilot.baseUrl`                     | `""`            | Override the API base URL. When set, `apiMode` and `region` are ignored.                                                         |
 | `kimi-copilot.maxTokens`                   | `0`             | Max output tokens (`0` = API default).                                                                           |
 | `kimi-copilot.maxRetries`                  | `3`             | Auto-retries for transient failures (429 / 5xx).                                                                   |
-| `kimi-copilot.thinking`                    | `enabled`       | Default thinking state for `kimi-k2.6` / `kimi-k2.5` (overridden by the picker effort selector). |
+| `kimi-copilot.thinking`                    | `enabled`       | Legacy compatibility setting. Built-in Kimi models now use the picker-side Thinking Effort control instead. |
 | `kimi-copilot.customModels`                | `[]`            | Add your own model ids to the picker.                                                                              |
 | `kimi-copilot.modelIdOverrides`            | `{}`            | Remap built-in model ids for proxies.                                                                              |
-| `kimi-copilot.showUsageStatusBar`          | `true`          | Show the usage status-bar item.                                                                                  |
-| `kimi-copilot.usageRefreshIntervalMinutes` | `5`             | Status-bar refresh interval (1–1440 min).                                                                         |
+| `kimi-copilot.showUsageStatusBar`          | `true`          | Show the usage status-bar item. In Membership mode, this is also where quota-exhaustion fallback prompts appear. |
+| `kimi-copilot.usageRefreshIntervalMinutes` | `5`             | Status-bar refresh interval (1–1440 min). Also controls how quickly exhausted membership quota can trigger a Standard API fallback prompt. |
 | `kimi-copilot.debugLogging`                | `false`         | Verbose logging to the Kimi output channel.                                                                        |
 
 ## Commands

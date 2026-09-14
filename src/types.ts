@@ -11,8 +11,9 @@ export type ApiMode = 'standard' | 'membership';
 
 /**
  * How a model controls thinking:
- * - `effort` — all current Kimi models: uses top-level `reasoning_effort` with selectable levels.
- *   Always-on models (k3, code) omit "off" from the picker; toggleable models (k2.6, k2.5) include it.
+ * - `effort` — effort-capable Kimi models. The exact wire encoding is model-family-specific:
+ *   Kimi Open Platform `kimi-k3` uses top-level `reasoning_effort`, while Kimi Code and K2.x models use
+ *   `thinking: { type, effort? }`. Models whose backend supports no-thinking include `off` in the picker.
  * - `toggle` — legacy fallback: `thinking.type` enabled/disabled (no effort levels).
  * - `code` — legacy: thinking always on, `thinking: { type: "enabled", keep: "all" }`.
  * - `k3` — legacy: always reasons via `reasoning_effort: "max"`.
@@ -251,9 +252,24 @@ export interface IKimiClient {
 /** Credential manager. Implemented by `auth.ts`. */
 export interface IAuthManager {
 	getApiKey(): Promise<string | undefined>;
+	getApiKeyForMode(mode: ApiMode): Promise<string | undefined>;
 	hasApiKey(): Promise<boolean>;
 	promptForApiKey(): Promise<boolean>;
 	/** Run the OAuth device-code login flow directly (membership mode). */
 	loginOAuth(): Promise<boolean>;
 	deleteApiKey(): Promise<void>;
+}
+
+export interface ApiKeyProbeResult {
+	membership: UsageSnapshot;
+	standard: Record<Region, UsageSnapshot>;
+}
+
+export interface ApiKeyClassification {
+	kind: 'membership' | 'standard' | 'invalid' | 'unknown';
+	membershipAccepted: boolean;
+	membershipConfirmed: boolean;
+	standardRegions: Region[];
+	detectedRegion?: Region;
+	probe: ApiKeyProbeResult;
 }

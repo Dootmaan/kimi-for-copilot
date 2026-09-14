@@ -18,6 +18,16 @@ export function getRegion(): Region {
 	return cfg().get<Region>('region', 'international');
 }
 
+/** Persist the active API mode in user settings. */
+export async function updateApiMode(mode: ApiMode): Promise<void> {
+	await cfg().update('apiMode', mode, vscode.ConfigurationTarget.Global);
+}
+
+/** Persist the Standard API region in user settings. */
+export async function updateRegion(region: Region): Promise<void> {
+	await cfg().update('region', region, vscode.ConfigurationTarget.Global);
+}
+
 /** User-supplied base URL override (empty = use the region-derived endpoint). */
 export function getBaseUrlOverride(): string {
 	return (cfg().get<string>('baseUrl', '') ?? '').trim();

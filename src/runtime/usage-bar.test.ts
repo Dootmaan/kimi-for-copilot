@@ -33,6 +33,8 @@ vi.mock('vscode', () => ({
 	window: {
 		createStatusBarItem: vi.fn(() => statusBar),
 		createOutputChannel: vi.fn(() => ({ appendLine: vi.fn(), dispose: vi.fn() })),
+		showWarningMessage: vi.fn(),
+		showInformationMessage: vi.fn(),
 		activeColorTheme: { kind: 1 },
 	},
 	workspace: {
@@ -52,12 +54,16 @@ const cfg = vi.hoisted(() => ({
 	show: true,
 	interval: 5,
 }));
+const updateApiMode = vi.hoisted(() => vi.fn(async () => undefined));
+const updateRegion = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock('../config', () => ({
 	getApiMode: () => cfg.mode,
 	getRegion: () => cfg.region,
 	getBaseUrlOverride: () => cfg.baseUrl,
 	getShowUsageStatusBar: () => cfg.show,
 	getUsageRefreshIntervalMinutes: () => cfg.interval,
+	updateApiMode,
+	updateRegion,
 }));
 
 import { UsageStatusBar } from './usage-bar';
@@ -72,8 +78,10 @@ function setConfig(mode: 'standard' | 'membership' = 'standard', region: 'intern
 function makeAuth(hasKey: boolean): IAuthManager {
 	return {
 		getApiKey: vi.fn(async () => (hasKey ? 'sk-test-key' : undefined)),
+		getApiKeyForMode: vi.fn(async () => (hasKey ? 'sk-test-key' : undefined)),
 		hasApiKey: vi.fn(async () => hasKey),
 		promptForApiKey: vi.fn(),
+		loginOAuth: vi.fn(),
 		deleteApiKey: vi.fn(),
 	};
 }
@@ -235,6 +243,73 @@ describe('UsageStatusBar gate + balance rendering', () => {
 		);
 		await bar.refresh();
 		expect(statusBar.backgroundColor).toBeDefined();
+		bar.dispose();
+	});
+
+	it('offers to switch to Standard API when membership is exhausted and fallback balance is available', async () => {
+		setConfig('membership', 'international');
+		const c: IUsageClient = {
+			fetchMembershipUsage: vi.fn(async () => ({
+				status: 'ok',
+				fetchedAt: Date.now(),
+				metrics: [{ kind: 'session', used: 100, limit: 100 }],
+			})),
+			fetchBalance: vi.fn(),
+		};
+		const vscode = await import('vscode');
+		vi.mocked(vscode.window.showWarningMessage).mockResolvedValueOnce('Switch to Standard API');
+		const bar = new UsageStatusBar(
+			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
+			makeAuth(true),
+			c,
+			{
+				findPositiveStandardBalance: vi.fn(async () => ({
+					region: 'international',
+					snapshot: {
+						status: 'ok',
+						fetchedAt: Date.now(),
+						metrics: [],
+						balance: { availableBalance: 12, voucherBalance: 2, cashBalance: 10 },
+					},
+				})),
+			},
+		);
+		await bar.refresh();
+		expect(updateRegion).toHaveBeenCalledWith('international');
+		expect(updateApiMode).toHaveBeenCalledWith('standard');
+		bar.dispose();
+	});
+
+	it('does not switch when the fallback prompt is declined', async () => {
+		setConfig('membership', 'international');
+		const c: IUsageClient = {
+			fetchMembershipUsage: vi.fn(async () => ({
+				status: 'ok',
+				fetchedAt: Date.now(),
+				metrics: [{ kind: 'session', used: 100, limit: 100 }],
+			})),
+			fetchBalance: vi.fn(),
+		};
+		const vscode = await import('vscode');
+		vi.mocked(vscode.window.showWarningMessage).mockResolvedValueOnce('Not now');
+		const bar = new UsageStatusBar(
+			{ subscriptions, secrets: { onDidChange: vi.fn(() => ({ dispose: () => undefined })) } } as unknown as Parameters<typeof UsageStatusBar>[0],
+			makeAuth(true),
+			c,
+			{
+				findPositiveStandardBalance: vi.fn(async () => ({
+					region: 'international',
+					snapshot: {
+						status: 'ok',
+						fetchedAt: Date.now(),
+						metrics: [],
+						balance: { availableBalance: 12, voucherBalance: 2, cashBalance: 10 },
+					},
+				})),
+			},
+		);
+		await bar.refresh();
+		expect(updateApiMode).not.toHaveBeenCalled();
 		bar.dispose();
 	});
 });

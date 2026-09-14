@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.5] - 2026-09-14
+
+### Added
+
+- Automatic API key detection when running `Kimi: Set API Key`.
+  - The extension now probes Kimi Code membership plus both Open Platform regions after an API key is entered.
+  - Membership keys switch the extension to **Kimi Code Membership** automatically.
+  - Standard API keys switch the extension to **Standard API** automatically when no active membership credential exists, and auto-detect **International** vs **Mainland China**.
+  - When Membership mode is already active through OAuth or a saved membership key, a detected Standard API key is kept as a fallback instead of forcing an immediate switch.
+- Confirmed fallback from exhausted membership quota to Standard API.
+  - When Kimi Code membership quota is exhausted, the extension now checks whether a saved Standard API key has positive balance.
+  - If balance is available, it asks the user for confirmation before switching to Standard API and updating the region automatically.
+
+### Changed
+
+- Split stored credentials into separate membership and Standard API slots so OAuth-based membership and Standard API fallback can coexist.
+- Updated README, walkthrough text, and settings descriptions to document automatic mode detection and fallback behavior.
+
+## [1.0.4] - 2026-09-14
+
+### Changed
+
+- Refreshed the built-in model matrix to match the latest official Kimi product lineup.
+  - **Kimi Code membership** now exposes `k3`, `k3-256k`, `kimi-for-coding` (K2.8 Preview under the same model ID), and `kimi-for-coding-highspeed`.
+  - **Standard API** now exposes `kimi-k3`, `kimi-k2.7-code`, `kimi-k2.7-code-highspeed`, and `kimi-k2.6`.
+- Removed retired `kimi-k2.5` from the Standard API picker. Official Kimi Open Platform docs now mark it as retired and requests return `404`.
+- Updated README, walkthrough copy, and in-product model descriptions to reflect the September 2026 lineup.
+
+### Fixed
+
+- Updated Kimi Code request routing to match the current model family semantics.
+  - `k3`, `k3-256k`, and `kimi-for-coding` now use top-level `reasoning_effort` for `low` / `high` / `max`.
+  - Turning thinking **Off** on those models now sends `thinking: { type: "disabled" }`, matching the documented K2.8 no-thinking route.
+  - `kimi-for-coding-highspeed` stays always-on and is sent as preserved thinking without an effort selector.
+
 ## [1.0.3] - 2026-08-07
 
 ### Fixed

@@ -1,9 +1,9 @@
 {
 	"name": "kimi-family-for-github-copilot-chat",
 	"displayName": "Kimi Family for Github Copilot Chat",
-	"description": "Bring Kimi (Moonshot AI) models — kimi-k3, kimi-k2.7-code and kimi-k2.6 — into GitHub Copilot Chat with visible thinking. BYOK.",
+	"description": "Bring current Kimi Code and Kimi Open Platform models into GitHub Copilot Chat with visible thinking. Supports membership and Standard API.",
 	"icon": "resources/icon.png",
-    "version": "1.0.3",
+	"version": "1.0.5",
 	"publisher": "Dootmaan",
 	"license": "MIT",
 	"repository": {

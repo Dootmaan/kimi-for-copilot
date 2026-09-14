@@ -14,6 +14,12 @@ export const VENDOR_ID = 'kimi';
 /** SecretStorage key for the Kimi (Moonshot) API key. */
 export const API_KEY_SECRET = 'kimi-copilot.apiKey';
 
+/** SecretStorage key for a Standard API (Open Platform) key. */
+export const STANDARD_API_KEY_SECRET = 'kimi-copilot.standardApiKey';
+
+/** SecretStorage key for a Kimi Code membership API key. */
+export const MEMBERSHIP_API_KEY_SECRET = 'kimi-copilot.membershipApiKey';
+
 /** Memento key tracking whether the welcome walkthrough has been shown. */
 export const WELCOME_SHOWN_KEY = 'kimi-copilot.welcomeShown';
 
@@ -111,7 +117,14 @@ const EFFORT_ALWAYS_ON: ThinkingEffortSpec = {
 	canDisable: false,
 };
 
-/** Effort spec for toggleable models (k2.6, k2.5): off/low/high/max. */
+/** Effort spec for membership models that support no-thinking routing plus low/high/max. */
+const EFFORT_MEMBERSHIP_TOGGLEABLE: ThinkingEffortSpec = {
+	levels: ['low', 'high', 'max'],
+	default: 'high',
+	canDisable: true,
+};
+
+/** Effort spec for toggleable Open Platform models (k2.6): off/low/high/max. */
 const EFFORT_TOGGLEABLE: ThinkingEffortSpec = {
 	levels: ['low', 'high', 'max'],
 	default: 'high',
@@ -121,14 +134,65 @@ const EFFORT_TOGGLEABLE: ThinkingEffortSpec = {
 /** Built-in Kimi models exposed through the language model provider. */
 export const MODELS: KimiModel[] = [
 	{
+		id: 'k3',
+		name: 'K3',
+		family: 'kimi',
+		version: 'K3',
+		detail: 'Kimi Code flagship model, 1M context',
+		maxInputTokens: 1_048_576,
+		maxOutputTokens: 131_072,
+		capabilities: {
+			toolCalling: DEFAULT_TOOLS_LIMIT,
+			imageInput: true,
+			thinking: true,
+			thinkingStyle: 'effort',
+			thinkingEffort: EFFORT_MEMBERSHIP_TOGGLEABLE,
+		},
+		availableIn: ['membership'],
+	},
+	{
+		id: 'k3-256k',
+		name: 'K3 256K',
+		family: 'kimi',
+		version: 'K3',
+		detail: 'Kimi Code flagship model, 256K context',
+		maxInputTokens: 262_144,
+		maxOutputTokens: 131_072,
+		capabilities: {
+			toolCalling: DEFAULT_TOOLS_LIMIT,
+			imageInput: true,
+			thinking: true,
+			thinkingStyle: 'effort',
+			thinkingEffort: EFFORT_MEMBERSHIP_TOGGLEABLE,
+		},
+		availableIn: ['membership'],
+	},
+	{
 		id: 'kimi-for-coding',
 		name: 'Kimi for Coding',
 		family: 'kimi',
-		version: 'Code',
-		detail: 'Kimi Code membership model, 256K context',
+		version: 'K2.8 Preview',
+		detail: 'K2.8 Preview in Kimi Code, 1M context',
+		maxInputTokens: 1_048_576,
+		maxOutputTokens: 131_072,
+		capabilities: {
+			toolCalling: DEFAULT_TOOLS_LIMIT,
+			imageInput: true,
+			thinking: true,
+			thinkingStyle: 'effort',
+			thinkingEffort: { levels: ['low', 'high', 'max'], default: 'max', canDisable: true },
+		},
+		availableIn: ['membership'],
+	},
+	{
+		id: 'kimi-for-coding-highspeed',
+		name: 'Kimi for Coding HighSpeed',
+		family: 'kimi',
+		version: 'K2.7 Code HighSpeed',
+		detail: 'High-speed Kimi Code model, 256K context',
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,
-		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'effort', thinkingEffort: EFFORT_ALWAYS_ON },
+		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'code' },
 		availableIn: ['membership'],
 	},
 	{
@@ -169,17 +233,6 @@ export const MODELS: KimiModel[] = [
 		name: 'Kimi K2.6',
 		family: 'kimi',
 		version: 'K2.6',
-		detail: 'General model, 256K context',
-		maxInputTokens: 262_144,
-		maxOutputTokens: 131_072,
-		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'effort', thinkingEffort: EFFORT_TOGGLEABLE },
-		availableIn: ['standard'],
-	},
-	{
-		id: 'kimi-k2.5',
-		name: 'Kimi K2.5',
-		family: 'kimi',
-		version: 'K2.5',
 		detail: 'General model, 256K context',
 		maxInputTokens: 262_144,
 		maxOutputTokens: 131_072,

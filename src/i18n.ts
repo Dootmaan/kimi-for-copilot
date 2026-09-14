@@ -3,9 +3,21 @@ import * as vscode from 'vscode';
 /** Runtime UI strings (toasts, prompts, errors, picker labels). */
 const en: Record<string, string> = {
 	// Model picker
+	'model.k3.detail': 'Kimi Code flagship model, 1M context',
+	'model.k3.tooltip':
+		'Kimi Code K3 — flagship coding model, 1M context window, image/video input. Supports low/high/max reasoning effort; turning thinking off routes to the K2.8 no-thinking backend.',
+	'model.k3-256k.detail': 'Kimi Code flagship model, 256K context',
+	'model.k3-256k.tooltip':
+		'Kimi Code K3 256K — lower-quota K3 variant with 256K context and image input. Supports low/high/max reasoning effort; turning thinking off routes to the K2.8 no-thinking backend.',
+	'model.kimi-for-coding.detail': 'K2.8 Preview in Kimi Code, up to 1M context',
+	'model.kimi-for-coding.tooltip':
+		'Kimi for Coding — K2.8 Preview under the existing model id, up to 1M context, image/video input. Supports low/high/max reasoning effort; turning thinking off routes to the K2.8 no-thinking backend.',
+	'model.kimi-for-coding-highspeed.detail': 'High-speed Kimi Code model, 256K context',
+	'model.kimi-for-coding-highspeed.tooltip':
+		'Kimi for Coding HighSpeed — K2.7 Code HighSpeed in Kimi Code, 256K context, image/video input, about 5-6x output speed. Thinking stays on and has no effort selector.',
 	'model.kimi-k3.detail': 'Flagship model, 1M context, always reasons',
 	'model.kimi-k3.tooltip':
-		'Kimi K3 — flagship model (2.8T params), 1M context window, native visual understanding. Always reasons (reasoning_effort=max).',
+		'Kimi K3 — flagship model (2.8T params), 1M context window, native visual understanding. Always reasons and supports low/high/max reasoning effort.',
 	'model.kimi-k2.7-code.detail': 'Coding model, 256K context, always reasons',
 	'model.kimi-k2.7-code.tooltip':
 		'Kimi K2.7 Code — coding-focused, 256K context, text/image/video input, thinking always on with Preserved Thinking.',
@@ -15,27 +27,39 @@ const en: Record<string, string> = {
 	'model.kimi-k2.6.detail': 'General model, 256K context',
 	'model.kimi-k2.6.tooltip':
 		'Kimi K2.6 — general-purpose, 256K context, text/image/video input, toggleable thinking mode.',
-	'model.kimi-k2.5.detail': 'General model, 256K context',
-	'model.kimi-k2.5.tooltip': 'Kimi K2.5 — general-purpose, 256K context, toggleable thinking mode.',
 	'model.custom.detail': 'Custom model',
 
 	// Auth
 	'auth.apiKeyRequiredDetail': 'Run "Kimi: Set API Key" to configure.',
 	'auth.prompt':
-		'Enter your Kimi (Moonshot AI) API key. Create one at platform.kimi.ai (International) or platform.kimi.com (Mainland China).',
+		'Enter a Kimi API key. The extension will detect Kimi Code membership vs Standard API access automatically, and set the region when possible.',
 	'auth.placeholder': 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 	'auth.emptyValidation': 'API key cannot be empty',
 	'auth.saved': 'Kimi API key saved.',
 	'auth.removed': 'Kimi API key removed.',
 	'auth.notConfigured': 'Kimi API key not configured. Run "Kimi: Set API Key" from the Command Palette.',
+	'auth.detecting': 'Checking Kimi membership and Standard API access…',
+	'auth.saved.membershipDetected': 'Detected Kimi Code membership access and switched to Membership mode.',
+	'auth.saved.standardDetected': 'Detected a Standard API key and switched to Standard API ({0}).',
+	'auth.saved.standardFallback': 'Saved this Standard API key as a fallback for Membership mode and set the region to {0}.',
+	'auth.saved.unknown': 'Kimi API key saved, but the extension could not determine the correct mode automatically. Current mode was kept.',
+	'auth.invalid': 'This API key is not valid for Kimi Code membership or the Kimi Open Platform. It was not saved.',
+	'auth.detect.placeHolder': 'Choose where to save this key because automatic detection was inconclusive',
+	'auth.detect.membership': 'Save as Kimi Code membership key',
+	'auth.detect.membershipDetail': 'Use this for Kimi Code membership access and quota tracking.',
+	'auth.detect.standard': 'Save as Standard API key',
+	'auth.detect.standardDetail': 'Use this for Open Platform pay-as-you-go access and balance tracking.',
+	'auth.detect.standardDetailWithRegion': 'Use this for Open Platform pay-as-you-go access and set the region to {0}.',
+	'region.international': 'International',
+	'region.china': 'Mainland China',
 
 	// Login method selection (membership mode)
 	'auth.login.placeHolder': 'Choose how to sign in to Kimi Code Membership',
 	'auth.login.oauth': 'Sign in with browser (OAuth)',
 	'auth.login.oauthDetail': 'Authorize via the Kimi device-code login flow (recommended).',
 	'auth.login.apiKey': 'Paste an API key',
-	'auth.login.apiKeyDetail': 'Use a Kimi Code Console API key from kimi.com/code/console.',
-	'auth.promptMembership': 'Enter your Kimi Code API key from kimi.com/code/console.',
+	'auth.login.apiKeyDetail': 'Paste any Kimi API key. The extension will auto-detect membership vs Standard API access.',
+	'auth.promptMembership': 'Enter a Kimi API key. Membership keys stay in Membership mode; Open Platform keys can be saved as Standard API fallback automatically.',
 
 	// OAuth (Kimi Code membership login)
 	'oauth.prompt': 'Authorize Kimi Code: open the URL and enter code {0} (expires in {1} min).',
@@ -142,36 +166,60 @@ const en: Record<string, string> = {
 	'usage.balance.voucher': 'Voucher',
 	'usage.balance.cash': 'Cash',
 	'usage.balance.booster': 'Booster (Extra Usage)',
+	'usage.switchToStandard.prompt': 'Your Kimi Code membership quota is exhausted. Switch to Standard API ({0}) and continue with available balance {1}?',
+	'usage.switchToStandard.confirm': 'Switch to Standard API',
+	'usage.switchToStandard.cancel': 'Not now',
+	'usage.switchToStandard.done': 'Switched to Standard API ({0}) after membership quota exhaustion.',
 };
 
 const zh: Record<string, string> = {
+	'model.k3.detail': 'Kimi Code 旗舰模型，100 万上下文',
+	'model.k3.tooltip': 'Kimi Code K3 — 旗舰编程模型，100 万上下文窗口，支持图片/视频输入。支持 low/high/max 三档思考强度；关闭思考后会路由到 K2.8 Preview 无思考后端。',
+	'model.k3-256k.detail': 'Kimi Code 旗舰模型，25.6 万上下文',
+	'model.k3-256k.tooltip': 'Kimi Code K3 256K — 更省额度的 K3 变体，25.6 万上下文，支持图片输入。支持 low/high/max 三档思考强度；关闭思考后会路由到 K2.8 Preview 无思考后端。',
+	'model.kimi-for-coding.detail': 'Kimi Code 中的 K2.8 Preview，最高 100 万上下文',
+	'model.kimi-for-coding.tooltip': 'Kimi for Coding — 沿用原模型 ID 的 K2.8 Preview，最高 100 万上下文，支持图片/视频输入。支持 low/high/max 三档思考强度；关闭思考后会路由到 K2.8 Preview 无思考后端。',
+	'model.kimi-for-coding-highspeed.detail': '高速 Kimi Code 模型，25.6 万上下文',
+	'model.kimi-for-coding-highspeed.tooltip': 'Kimi for Coding HighSpeed — Kimi Code 中的 K2.7 Code HighSpeed，25.6 万上下文，支持图片/视频输入，输出速度约为普通版 5-6 倍。思考始终开启，不提供强度选择。',
 	'model.kimi-k3.detail': '旗舰模型，100 万上下文，始终推理',
-	'model.kimi-k3.tooltip': 'Kimi K3 — 旗舰模型（2.8T 参数），100 万上下文窗口，原生视觉理解，始终推理（reasoning_effort=max）。',
+	'model.kimi-k3.tooltip': 'Kimi K3 — 旗舰模型（2.8T 参数），100 万上下文窗口，原生视觉理解，始终推理，并支持 low/high/max 三档思考强度。',
 	'model.kimi-k2.7-code.detail': '编程模型，25.6 万上下文，始终推理',
 	'model.kimi-k2.7-code.tooltip': 'Kimi K2.7 Code — 专注编程，25.6 万上下文，支持文本/图像/视频输入，始终开启思考与思考保留。',
 	'model.kimi-k2.7-code-highspeed.detail': '高速编程模型（约 180 tokens/s）',
 	'model.kimi-k2.7-code-highspeed.tooltip': 'Kimi K2.7 Code HighSpeed — 与 K2.7 Code 相同，输出约 180 tokens/s（短上下文最高 260）。25.6 万上下文。',
 	'model.kimi-k2.6.detail': '通用模型，25.6 万上下文',
 	'model.kimi-k2.6.tooltip': 'Kimi K2.6 — 通用模型，25.6 万上下文，支持文本/图像/视频输入，可切换思考模式。',
-	'model.kimi-k2.5.detail': '通用模型，25.6 万上下文',
-	'model.kimi-k2.5.tooltip': 'Kimi K2.5 — 通用模型，25.6 万上下文，可切换思考模式。',
 	'model.custom.detail': '自定义模型',
 
 	'auth.apiKeyRequiredDetail': '请运行“Kimi: Set API Key”进行配置。',
-	'auth.prompt': '请输入你的 Kimi（月之暗面）API 密钥。可在 platform.kimi.ai（国际版）或 platform.kimi.com（中国大陆）创建。',
+	'auth.prompt': '请输入一个 Kimi API 密钥。扩展会自动检测它是 Kimi Code 会员还是标准 API，并在可能时自动设置区域。',
 	'auth.placeholder': 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 	'auth.emptyValidation': 'API 密钥不能为空',
 	'auth.saved': 'Kimi API 密钥已保存。',
 	'auth.removed': 'Kimi API 密钥已删除。',
 	'auth.notConfigured': '尚未配置 Kimi API 密钥。请在命令面板运行“Kimi: Set API Key”。',
+	'auth.detecting': '正在检查 Kimi 会员与标准 API 权限…',
+	'auth.saved.membershipDetected': '已检测到 Kimi Code 会员权限，并自动切换到会员模式。',
+	'auth.saved.standardDetected': '已检测到标准 API 密钥，并自动切换到标准 API（{0}）。',
+	'auth.saved.standardFallback': '已将该标准 API 密钥保存为会员模式的后备，并将区域设置为 {0}。',
+	'auth.saved.unknown': 'Kimi API 密钥已保存，但扩展暂时无法自动判断正确模式，已保留当前模式。',
+	'auth.invalid': '这个 API 密钥既无法用于 Kimi Code 会员，也无法用于 Kimi 开放平台，因此未被保存。',
+	'auth.detect.placeHolder': '自动检测未得出明确结果，请选择把这个密钥保存到哪里',
+	'auth.detect.membership': '保存为 Kimi Code 会员密钥',
+	'auth.detect.membershipDetail': '用于 Kimi Code 会员访问与配额跟踪。',
+	'auth.detect.standard': '保存为标准 API 密钥',
+	'auth.detect.standardDetail': '用于开放平台按量付费访问与余额跟踪。',
+	'auth.detect.standardDetailWithRegion': '用于开放平台按量付费访问，并将区域设置为 {0}。',
+	'region.international': '国际站',
+	'region.china': '中国大陆',
 
 	// 登录方式选择（会员模式）
 	'auth.login.placeHolder': '选择 Kimi Code 会员的登录方式',
 	'auth.login.oauth': '浏览器登录（OAuth）',
 	'auth.login.oauthDetail': '通过 Kimi 设备码登录流程授权（推荐）。',
 	'auth.login.apiKey': '粘贴 API 密钥',
-	'auth.login.apiKeyDetail': '使用 kimi.com/code/console 的 Kimi Code API 密钥。',
-	'auth.promptMembership': '请输入来自 kimi.com/code/console 的 Kimi Code API 密钥。',
+	'auth.login.apiKeyDetail': '可粘贴任意 Kimi API 密钥，扩展会自动判断是会员还是标准 API。',
+	'auth.promptMembership': '请输入一个 Kimi API 密钥。会员密钥会保留在会员模式；开放平台密钥可自动保存为标准 API 后备。',
 
 	// OAuth（Kimi Code 会员登录）
 	'oauth.prompt': '授权 Kimi Code：打开链接并输入验证码 {0}（{1} 分钟内有效）。',
@@ -260,6 +308,10 @@ const zh: Record<string, string> = {
 	'usage.balance.voucher': '代金券',
 	'usage.balance.cash': '现金余额',
 	'usage.balance.booster': '加油包（Extra Usage）',
+	'usage.switchToStandard.prompt': '你的 Kimi Code 会员套餐额度已用尽。是否切换到标准 API（{0}），并继续使用当前可用余额 {1}？',
+	'usage.switchToStandard.confirm': '切换到标准 API',
+	'usage.switchToStandard.cancel': '暂不切换',
+	'usage.switchToStandard.done': '检测到会员额度耗尽，已切换到标准 API（{0}）。',
 };
 
 function isZh(): boolean {
