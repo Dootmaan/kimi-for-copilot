@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.6] - 2026-10-15
+
+### Changed
+
+- Aligned the language model provider contribution with the latest Copilot Chat conventions: the Kimi entry in the model picker's provider list now exposes a manage-models action through `managementCommand`, opening the extension settings directly from Copilot Chat.
+- Confirmed compatibility with VS Code 1.141 Copilot Chat model picker behavior, including the built-in Kimi branding for model rows and the provider tab.
+
 ## [1.0.5] - 2026-09-14
 
 ### Added

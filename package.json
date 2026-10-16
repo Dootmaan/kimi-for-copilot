@@ -3,7 +3,7 @@
 	"displayName": "Kimi Family for Github Copilot Chat",
 	"description": "Bring current Kimi Code and Kimi Open Platform models into GitHub Copilot Chat with visible thinking. Supports membership and Standard API.",
 	"icon": "resources/icon.png",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"publisher": "Dootmaan",
 	"license": "MIT",
 	"repository": {
@@ -53,7 +53,8 @@
 		"languageModelChatProviders": [
 			{
 				"vendor": "kimi",
-				"displayName": "Kimi"
+				"displayName": "Kimi",
+				"managementCommand": "kimi-copilot.openSettings"
 			}
 		],
 		"commands": [
