@@ -3,6 +3,18 @@ import * as vscode from 'vscode';
 /** Runtime UI strings (toasts, prompts, errors, picker labels). */
 const en: Record<string, string> = {
 	// Model picker
+	'model.k3.1-pro.detail': 'Newest flagship model, up to 1M context, thinking only',
+	'model.k3.1-pro.tooltip':
+		'Kimi Code K3.1 Pro — newest flagship (3T params), up to 1M context, image/video input. Thinking-only model: low/high/max effort (default high); the API rejects turning thinking off.',
+	'model.k3.1-pro-highspeed.detail': 'High-speed K3.1 Pro (~2-3x faster), up to 1M context',
+	'model.k3.1-pro-highspeed.tooltip':
+		'Kimi Code K3.1 Pro Highspeed — same capability as K3.1 Pro at ~2-3x speed (about 2x usage). Up to 1M context, image/video input, thinking-only with low/high/max effort.',
+	'model.kimi-k3.1-pro.detail': 'Newest flagship model, 1M context, thinking only',
+	'model.kimi-k3.1-pro.tooltip':
+		'Kimi K3.1 Pro — newest flagship (3T params), 1M context, image/video input. Thinking-only model: low/high/max effort (default high); the API rejects turning thinking off.',
+	'model.kimi-k3.1-pro-highspeed.detail': 'High-speed flagship (~2-3x faster), 1M context',
+	'model.kimi-k3.1-pro-highspeed.tooltip':
+		'Kimi K3.1 Pro HighSpeed — same capability as K3.1 Pro at ~2-3x speed. 1M context, image/video input, thinking-only with low/high/max effort.',
 	'model.k3.detail': 'Kimi Code flagship model, 1M context',
 	'model.k3.tooltip':
 		'Kimi Code K3 — flagship coding model, 1M context window, image/video input. Supports low/high/max reasoning effort; turning thinking off routes to the K2.8 no-thinking backend.',
@@ -26,7 +38,7 @@ const en: Record<string, string> = {
 		'Kimi K2.7 Code HighSpeed — same as K2.7 Code but ~180 tokens/s (up to 260 in short context). 256K context.',
 	'model.kimi-k2.6.detail': 'General model, 256K context',
 	'model.kimi-k2.6.tooltip':
-		'Kimi K2.6 — general-purpose, 256K context, text/image/video input, toggleable thinking mode.',
+		'Kimi K2.6 — general-purpose, 256K context, text/image/video input, toggleable thinking mode. Note: the K2 series is scheduled to be retired from the Open Platform by the end of December 2026.',
 	'model.custom.detail': 'Custom model',
 
 	// Auth
@@ -173,6 +185,14 @@ const en: Record<string, string> = {
 };
 
 const zh: Record<string, string> = {
+	'model.k3.1-pro.detail': '最新旗舰模型，最高 100 万上下文，仅支持思考模式',
+	'model.k3.1-pro.tooltip': 'Kimi Code K3.1 Pro — 全新旗舰模型（3T 级参数），最高 100 万上下文，支持图片/视频输入。仅支持思考模式：low/high/max 三档（默认 high）；关闭思考的请求会被 API 拒绝。',
+	'model.k3.1-pro-highspeed.detail': '高速版 K3.1 Pro（约 2-3 倍速），最高 100 万上下文',
+	'model.k3.1-pro-highspeed.tooltip': 'Kimi Code K3.1 Pro Highspeed — 与 K3.1 Pro 能力一致，速度约 2-3 倍（消耗约 2 倍）。最高 100 万上下文，支持图片/视频输入，仅支持思考模式，low/high/max 三档。',
+	'model.kimi-k3.1-pro.detail': '最新旗舰模型，100 万上下文，仅支持思考模式',
+	'model.kimi-k3.1-pro.tooltip': 'Kimi K3.1 Pro — 全新旗舰模型（3T 级参数），100 万上下文，支持图片/视频输入。仅支持思考模式：low/high/max 三档（默认 high）；关闭思考的请求会被 API 拒绝。',
+	'model.kimi-k3.1-pro-highspeed.detail': '高速版旗舰模型（约 2-3 倍速），100 万上下文',
+	'model.kimi-k3.1-pro-highspeed.tooltip': 'Kimi K3.1 Pro HighSpeed — 与 K3.1 Pro 能力一致，速度约 2-3 倍。100 万上下文，支持图片/视频输入，仅支持思考模式，low/high/max 三档。',
 	'model.k3.detail': 'Kimi Code 旗舰模型，100 万上下文',
 	'model.k3.tooltip': 'Kimi Code K3 — 旗舰编程模型，100 万上下文窗口，支持图片/视频输入。支持 low/high/max 三档思考强度；关闭思考后会路由到 K2.8 Preview 无思考后端。',
 	'model.k3-256k.detail': 'Kimi Code 旗舰模型，25.6 万上下文',
@@ -188,7 +208,7 @@ const zh: Record<string, string> = {
 	'model.kimi-k2.7-code-highspeed.detail': '高速编程模型（约 180 tokens/s）',
 	'model.kimi-k2.7-code-highspeed.tooltip': 'Kimi K2.7 Code HighSpeed — 与 K2.7 Code 相同，输出约 180 tokens/s（短上下文最高 260）。25.6 万上下文。',
 	'model.kimi-k2.6.detail': '通用模型，25.6 万上下文',
-	'model.kimi-k2.6.tooltip': 'Kimi K2.6 — 通用模型，25.6 万上下文，支持文本/图像/视频输入，可切换思考模式。',
+	'model.kimi-k2.6.tooltip': 'Kimi K2.6 — 通用模型，25.6 万上下文，支持文本/图像/视频输入，可切换思考模式。注意：K2 系列计划于 2026 年 12 月底从开放平台下线。',
 	'model.custom.detail': '自定义模型',
 
 	'auth.apiKeyRequiredDetail': '请运行“Kimi: Set API Key”进行配置。',

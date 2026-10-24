@@ -64,6 +64,49 @@ const authManager = {
 };
 
 describe('prepareChatRequest thinking routing', () => {
+	it('defaults Kimi Code k3.1-pro to reasoning_effort high', async () => {
+		const prepared = await prepareChatRequest({
+			authManager,
+			extensionVersion: '1.0.7',
+			modelInfo: modelInfo('k3.1-pro'),
+			messages: [],
+			options: options(),
+			token: {} as never,
+		});
+
+		expect(prepared.request.reasoning_effort).toBe('high');
+		expect(prepared.request.thinking).toBeUndefined();
+	});
+
+	it('falls back to high instead of disabling thinking on k3.1-pro (thinking-only model)', async () => {
+		const prepared = await prepareChatRequest({
+			authManager,
+			extensionVersion: '1.0.7',
+			modelInfo: modelInfo('k3.1-pro'),
+			messages: [],
+			options: options('off'),
+			token: {} as never,
+		});
+
+		// K3.1 Pro rejects disabled thinking with HTTP 400, so "off" must never reach the wire.
+		expect(prepared.request.reasoning_effort).toBe('high');
+		expect(prepared.request.thinking).toBeUndefined();
+	});
+
+	it('uses reasoning_effort max for kimi-k3.1-pro-highspeed when picked', async () => {
+		const prepared = await prepareChatRequest({
+			authManager,
+			extensionVersion: '1.0.7',
+			modelInfo: modelInfo('kimi-k3.1-pro-highspeed'),
+			messages: [],
+			options: options('max'),
+			token: {} as never,
+		});
+
+		expect(prepared.request.reasoning_effort).toBe('max');
+		expect(prepared.request.thinking).toBeUndefined();
+	});
+
 	it('uses reasoning_effort for Kimi Code k3', async () => {
 		const prepared = await prepareChatRequest({
 			authManager,

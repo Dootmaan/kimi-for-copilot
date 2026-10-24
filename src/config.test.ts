@@ -37,6 +37,8 @@ describe('listProviderModels', () => {
 
 	it('shows the latest Kimi Code lineup in membership mode', () => {
 		expect(listProviderModels().map((model) => model.id)).toEqual([
+			'k3.1-pro',
+			'k3.1-pro-highspeed',
 			'k3',
 			'k3-256k',
 			'kimi-for-coding',
@@ -48,6 +50,8 @@ describe('listProviderModels', () => {
 		state.apiMode = 'standard';
 
 		expect(listProviderModels().map((model) => model.id)).toEqual([
+			'kimi-k3.1-pro',
+			'kimi-k3.1-pro-highspeed',
 			'kimi-k3',
 			'kimi-k2.7-code',
 			'kimi-k2.7-code-highspeed',
@@ -59,10 +63,14 @@ describe('listProviderModels', () => {
 		state.baseUrl = 'https://proxy.example/v1';
 
 		expect(listProviderModels().map((model) => model.id)).toEqual([
+			'k3.1-pro',
+			'k3.1-pro-highspeed',
 			'k3',
 			'k3-256k',
 			'kimi-for-coding',
 			'kimi-for-coding-highspeed',
+			'kimi-k3.1-pro',
+			'kimi-k3.1-pro-highspeed',
 			'kimi-k3',
 			'kimi-k2.7-code',
 			'kimi-k2.7-code-highspeed',

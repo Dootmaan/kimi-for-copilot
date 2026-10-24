@@ -1,9 +1,9 @@
 {
 	"name": "kimi-family-for-github-copilot-chat",
 	"displayName": "Kimi Family for Github Copilot Chat",
-	"description": "Bring current Kimi Code and Kimi Open Platform models into GitHub Copilot Chat with visible thinking. Supports membership and Standard API.",
+	"description": "Bring current Kimi Code and Kimi Open Platform models — including K3.1 Pro — into GitHub Copilot Chat with visible thinking. Supports membership and Standard API.",
 	"icon": "resources/icon.png",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"publisher": "Dootmaan",
 	"license": "MIT",
 	"repository": {
@@ -26,6 +26,7 @@
 	],
 	"keywords": [
 		"kimi",
+		"kimi-k3.1-pro",
 		"kimi-k3",
 		"kimi-code",
 		"kimi-for-coding",

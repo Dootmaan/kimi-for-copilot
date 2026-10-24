@@ -27,12 +27,16 @@ OpenAI-compatible. The extension always streams (`stream: true`) with `stream_op
 
 | Model | Context | Thinking control | Vision | Tool calling |
 | --- | --- | --- | --- | --- |
+| `kimi-k3.1-pro` | 1M | top-level `reasoning_effort: "low"|"high"|"max"` (thinking-only; disabling thinking returns HTTP 400) | yes | auto / none |
+| `kimi-k3.1-pro-highspeed` | 1M | same as `kimi-k3.1-pro`, ~2-3x speed | yes | auto / none |
 | `kimi-k3` | 1M | top-level `reasoning_effort: "low"|"high"|"max"` (always reasons) | yes | auto / none / required |
 | `kimi-k2.7-code` | 256K | `thinking: { type: "enabled", effort: "low"|"high"|"max", keep: "all" }` (always on) | yes | auto / none |
 | `kimi-k2.7-code-highspeed` | 256K | same as `kimi-k2.7-code`, ~180 tokens/s | yes | auto / none |
 | `kimi-k2.6` | 256K | `thinking: { type: "enabled" \| "disabled", effort: "low"|"high"|"max" }` | yes | auto / none |
 
 `kimi-k2.5` is no longer exposed by this extension because the official Open Platform docs now mark it as retired and requests return `404`.
+
+> **K2-series retirement**: starting October 31, 2026, K2-series models are no longer available to newly registered Open Platform users, and the whole K2 series (including `kimi-k2.6`) is scheduled to be retired by the end of December 2026. Prefer `kimi-k3.1-pro` for new work.
 
 ### Streaming response shape
 

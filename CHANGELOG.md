@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.7] - 2026-10-24
+
+### Added
+
+- **K3.1 Pro series support** on both API modes, matching the October 23, 2026 launch.
+  - **Kimi Code membership** now exposes `k3.1-pro` and `k3.1-pro-highspeed` (up to 1M context; the highspeed variant runs at ~2-3x speed).
+  - **Standard API** now exposes `kimi-k3.1-pro` and `kimi-k3.1-pro-highspeed`.
+  - Both are thinking-only models: the picker offers Low / High / Max effort (default High) and never sends a disable request, because the API rejects turning thinking off with HTTP 400.
+  - Effort routes through top-level `reasoning_effort`, same as the K3 family.
+
+### Changed
+
+- Documented the official K2-series retirement timeline: K2 models stop being available to new Open Platform users on October 31, 2026, and the whole K2 series is scheduled to be retired by the end of December 2026. `kimi-k2.6` remains selectable until then and its description now carries the notice.
+
 ## [1.0.6] - 2026-10-15
 
 ### Changed

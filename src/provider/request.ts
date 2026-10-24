@@ -73,7 +73,10 @@ export async function prepareChatRequest({
  * Resolve the model-specific thinking request fields from the picker's `reasoningEffort` selection.
  *
  * Wire format differs by model family (confirmed from the official OpenAPI spec + MoonshotAI/kimi-code source):
- * - Open Platform `kimi-k3`: top-level `reasoning_effort: "low"|"high"|"max"` (no `thinking` object).
+ * - K3.1 Pro family (`k3.1-pro`, `k3.1-pro-highspeed`, `kimi-k3.1-pro`, `kimi-k3.1-pro-highspeed`) and
+ *   Open Platform `kimi-k3`: top-level `reasoning_effort: "low"|"high"|"max"` (no `thinking` object).
+ *   K3.1 Pro is thinking-only — the API rejects disabled thinking with HTTP 400, so the picker never
+ *   offers "Off" and a persisted "off" falls back to the model default (high).
  * - Kimi Code `k3`, `k3-256k`, `kimi-for-coding`: `thinking: { type: "enabled", effort: "low"|"high"|"max" }`.
  *   When `off` is selected, Kimi Code routes K3/K2.8 to the K2.8 no-thinking backend.
  * - `kimi-k2.7-code` / `kimi-k2.7-code-highspeed` / `kimi-for-coding-highspeed`: `thinking: { type: "enabled", keep: "all" }`
@@ -96,13 +99,8 @@ function resolveThinkingFields(
 		return {};
 	}
 	const picked = resolveEffort(options, spec);
-	// K3-family models and Kimi Code's K2.8 Preview expose effort via top-level reasoning_effort.
-	if (
-		modelId === 'kimi-k3' ||
-		modelId === 'k3' ||
-		modelId === 'k3-256k' ||
-		modelId === 'kimi-for-coding'
-	) {
+	// K3.1 Pro / K3-family models and Kimi Code's K2.8 Preview expose effort via top-level reasoning_effort.
+	if (REASONING_EFFORT_MODELS.has(modelId)) {
 		return picked === 'off' ? { thinking: { type: 'disabled' } } : { reasoning_effort: picked };
 	}
 	if (picked === 'off') {
@@ -134,6 +132,18 @@ function resolveEffort(options: ProvideChatResponseOptions, spec: ThinkingEffort
 	}
 	return spec.default;
 }
+
+/** Models that expose thinking effort via top-level `reasoning_effort` (K3.1 Pro, K3, and K2.8 Preview families). */
+const REASONING_EFFORT_MODELS = new Set([
+	'kimi-k3',
+	'kimi-k3.1-pro',
+	'kimi-k3.1-pro-highspeed',
+	'k3',
+	'k3-256k',
+	'k3.1-pro',
+	'k3.1-pro-highspeed',
+	'kimi-for-coding',
+]);
 
 /** Augmented options type carrying the picker's `reasoningEffort` field set via `configurationSchema`. */
 type ProvideChatResponseOptions = vscode.ProvideLanguageModelChatResponseOptions & {
