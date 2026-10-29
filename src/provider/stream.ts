@@ -31,7 +31,13 @@ export async function streamChatCompletion({
 			reportThinking(progress, text);
 		},
 		onToolCall: (toolCall) => {
-			reportToolCall(progress, toolCall);
+			/** Restore the original VS Code tool name so Copilot can invoke the real tool/subagent. */
+			const wireName = toolCall.function.name;
+			const originalName = prepared.toolNameMap.get(wireName) ?? wireName;
+			reportToolCall(progress, {
+				...toolCall,
+				function: { ...toolCall.function, name: originalName },
+			});
 		},
 		onUsage: (usage) => {
 			updateCharsPerToken(prepared.totalRequestChars, usage, getCharsPerToken, setCharsPerToken);

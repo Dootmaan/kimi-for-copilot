@@ -247,7 +247,8 @@ export const MODELS: KimiModel[] = [
 		detail: 'Flagship model, 1M context, always reasons',
 		maxInputTokens: 1_000_000,
 		maxOutputTokens: 131_072,
-		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'effort', thinkingEffort: EFFORT_ALWAYS_ON },
+		/** The only Kimi model whose API accepts `tool_choice: "required"` (Copilot harness Required). */
+		capabilities: { toolCalling: DEFAULT_TOOLS_LIMIT, imageInput: true, thinking: true, thinkingStyle: 'effort', thinkingEffort: EFFORT_ALWAYS_ON, requiredToolChoice: true },
 		availableIn: ['standard'],
 	},
 	{

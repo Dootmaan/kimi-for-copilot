@@ -99,6 +99,8 @@ const en: Record<string, string> = {
 	// Request limits
 	'request.toolsLimitExceeded':
 		'Kimi supports at most {0} tools in one request, but this request has {1}. Use VS Code Configure Tools to disable tools you rarely use.',
+	'request.imageToolResultOmitted':
+		'[{0} image tool output omitted — Kimi tool results are text-only]',
 	'request.retry.rateLimited': 'Kimi is rate limited. Retrying in {0}s ({1}/{2}).',
 	'request.retry.busy': 'Kimi is busy. Retrying in {0}s ({1}/{2}).',
 
@@ -265,6 +267,8 @@ const zh: Record<string, string> = {
 
 	'request.toolsLimitExceeded':
 		'Kimi 单次请求最多支持 {0} 个工具，但本次请求包含 {1} 个。请使用 VS Code 的“配置工具”关闭不常用的工具。',
+	'request.imageToolResultOmitted':
+		'［已省略 {0} 个图片工具输出——Kimi 工具结果仅支持文本］',
 	'request.retry.rateLimited': 'Kimi 请求过于频繁。将在 {0} 秒后重试（{1}/{2}）。',
 	'request.retry.busy': 'Kimi 服务繁忙。将在 {0} 秒后重试（{1}/{2}）。',
 

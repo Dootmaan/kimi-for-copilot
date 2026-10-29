@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.8] - 2026-10-29
+
+### Added
+
+- Full support for the Copilot Chat agent/subagent harness contract: `toolMode` is now honored — `Required` maps to `tool_choice: "required"` on `kimi-k3` (the only Kimi model whose API accepts it) and degrades gracefully to `"auto"` on every other model instead of failing the request with HTTP 400; `Auto` maps to `tool_choice: "auto"`.
+- Tool-name sanitization with bidirectional mapping: VS Code tool names (including MCP and subagent-delegation tools with dots or other characters) are rewritten to Kimi-safe `[a-zA-Z0-9_-]` names for the wire, and the original names are restored on streamed tool calls so Copilot can invoke the real tools.
+- Image tool results (e.g. subagent screenshots) are annotated with a localized omission note, since Kimi tool results are text-only.
+- New [docs/copilot-harness.md](docs/copilot-harness.md) declaring the Copilot agent harness provider contract and the full mapping onto the Kimi wire format.
+
+### Changed
+
+- Redesigned the **Usage / Balance** panel to match the latest `glm-for-copilot` webview design: a centered `page` layout with CSS-variable theming, metric cards with progress bars (warning color at 100%), a hero balance card with supporting rows, a secondary refresh button, and a footer for offline/last-updated metadata. Added responsive breakpoints (720px/480px), `prefers-reduced-motion` support, focus-visible outlines, and the document `lang` attribute.
+
 ## [1.0.7] - 2026-10-24
 
 ### Added

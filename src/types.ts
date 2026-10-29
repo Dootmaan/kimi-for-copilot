@@ -39,6 +39,11 @@ export interface KimiModelCapabilities {
 	thinkingStyle?: ThinkingStyle;
 	/** Present ⇒ model supports selectable thinking effort levels. */
 	thinkingEffort?: ThinkingEffortSpec;
+	/**
+	 * `true` ⇒ the API accepts `tool_choice: "required"` (Copilot harness `Required` tool mode).
+	 * Kimi rejects `required` on every model except Open Platform `kimi-k3`, so this is opt-in per model.
+	 */
+	requiredToolChoice?: boolean;
 }
 
 /** A Kimi model exposed in the Copilot Chat picker. */
@@ -176,7 +181,7 @@ export interface KimiChatRequest {
 	messages: KimiMessage[];
 	stream: boolean;
 	tools?: KimiTool[];
-	tool_choice?: 'auto' | 'none';
+	tool_choice?: 'auto' | 'none' | 'required';
 	max_tokens?: number;
 	/** K2.x thinking control: `type` + optional `effort` (low/high/max) + `keep`. */
 	thinking?: { type: ThinkingMode; effort?: ThinkingEffort; keep?: 'all' };

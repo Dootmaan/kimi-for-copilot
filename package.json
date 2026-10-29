@@ -3,7 +3,7 @@
 	"displayName": "Kimi Family for Github Copilot Chat",
 	"description": "Bring current Kimi Code and Kimi Open Platform models — including K3.1 Pro — into GitHub Copilot Chat with visible thinking. Supports membership and Standard API.",
 	"icon": "resources/icon.png",
-	"version": "1.0.7",
+	"version": "1.0.8",
 	"publisher": "Dootmaan",
 	"license": "MIT",
 	"repository": {
@@ -283,13 +283,13 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
-		"@types/node": "^20.0.0",
-		"@types/vscode": "^1.116.0",
-		"@vscode/vsce": "^3.2.0",
-		"eslint": "^10.5.0",
-		"globals": "^17.7.0",
-		"typescript": "^5.6.0",
-		"typescript-eslint": "^8.62.0",
-		"vitest": "^4.1.9"
+		"@types/node": "^20.19.43",
+		"@types/vscode": "1.144.0",
+		"@vscode/vsce": "^3.9.2",
+		"eslint": "^10.13.0",
+		"globals": "^17.13.0",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.72.1",
+		"vitest": "^4.1.12"
 	}
 }

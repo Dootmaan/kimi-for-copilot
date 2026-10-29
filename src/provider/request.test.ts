@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('vscode', () => ({}));
+vi.mock('vscode', () => ({
+	LanguageModelChatToolMode: { Auto: 1, Required: 2 },
+}));
 
 vi.mock('../client', () => ({
 	KimiClient: class {
@@ -16,11 +18,7 @@ vi.mock('../i18n', () => ({
 	t: (key: string) => key,
 }));
 
-vi.mock('./convert', () => ({
-	convertMessages: () => [],
-	convertTools: () => [],
-	countMessageChars: () => 0,
-}));
+vi.mock('./convert', async () => await vi.importActual('./convert'));
 
 vi.mock('../config', async () => {
 	const { MODELS } = await vi.importActual<typeof import('../consts')>('../consts');
@@ -34,7 +32,7 @@ vi.mock('../config', async () => {
 
 import { prepareChatRequest } from './request';
 
-function modelInfo(id: string) {
+function modelInfo(id: string, capabilities?: { toolCalling?: number | boolean }) {
 	return {
 		id,
 		name: id,
@@ -43,7 +41,7 @@ function modelInfo(id: string) {
 		detail: 'test',
 		maxInputTokens: 0,
 		maxOutputTokens: 0,
-		capabilities: { toolCalling: false, imageInput: false },
+		capabilities: { toolCalling: false, imageInput: false, ...capabilities },
 	} as never;
 }
 
@@ -174,5 +172,67 @@ describe('prepareChatRequest thinking routing', () => {
 		});
 
 		expect(prepared.request.thinking).toEqual({ type: 'enabled', effort: 'high' });
+	});
+});
+describe('prepareChatRequest agent-harness toolMode', () => {
+	function toolOptions(toolMode?: number) {
+		return {
+			tools: [{ name: 'mcp.server.do-thing', description: 'd', inputSchema: { type: 'object' } }],
+			toolMode,
+		} as never;
+	}
+
+	it('respects Required on kimi-k3: tool_choice required + sanitized wire names', async () => {
+		const prepared = await prepareChatRequest({
+			authManager,
+			extensionVersion: '1.0.8',
+			modelInfo: modelInfo('kimi-k3', { toolCalling: 128 }),
+			messages: [],
+			options: toolOptions(2),
+			token: {} as never,
+		});
+
+		expect(prepared.request.tool_choice).toBe('required');
+		expect(prepared.request.tools?.[0]?.function.name).toBe('mcp_server_do-thing');
+		expect(prepared.toolNameMap.get('mcp_server_do-thing')).toBe('mcp.server.do-thing');
+	});
+
+	it('degrades Required to auto on models whose API rejects required (k3.1-pro)', async () => {
+		const prepared = await prepareChatRequest({
+			authManager,
+			extensionVersion: '1.0.8',
+			modelInfo: modelInfo('k3.1-pro', { toolCalling: 128 }),
+			messages: [],
+			options: toolOptions(2),
+			token: {} as never,
+		});
+
+		expect(prepared.request.tool_choice).toBe('auto');
+	});
+
+	it('uses tool_choice auto for the default Auto toolMode', async () => {
+		const prepared = await prepareChatRequest({
+			authManager,
+			extensionVersion: '1.0.8',
+			modelInfo: modelInfo('kimi-k3', { toolCalling: 128 }),
+			messages: [],
+			options: toolOptions(1),
+			token: {} as never,
+		});
+
+		expect(prepared.request.tool_choice).toBe('auto');
+	});
+
+	it('omits tool_choice when the harness sends no tools', async () => {
+		const prepared = await prepareChatRequest({
+			authManager,
+			extensionVersion: '1.0.8',
+			modelInfo: modelInfo('kimi-k3', { toolCalling: 128 }),
+			messages: [],
+			options: { tools: [], toolMode: 2 } as never,
+			token: {} as never,
+		});
+
+		expect(prepared.request.tool_choice).toBeUndefined();
 	});
 });

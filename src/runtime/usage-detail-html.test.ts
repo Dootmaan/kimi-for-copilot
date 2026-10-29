@@ -28,7 +28,6 @@ const strings: UsagePanelStrings = {
 	balanceAvailable: 'Available',
 	balanceVoucher: 'Voucher',
 	balanceCash: 'Cash',
-	balanceBooster: 'Booster',
 	exhausted: 'Balance exhausted.',
 };
 

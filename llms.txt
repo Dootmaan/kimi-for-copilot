@@ -3,5 +3,8 @@
 Kimi (Moonshot AI) models for GitHub Copilot Chat — BYOK, with visible thinking and balance monitoring.
 
 - Docs: docs/kimi-api.md
+- Harness: docs/copilot-harness.md
 - README: README.md
 - API reference (Kimi): https://platform.kimi.ai/docs
+
+Copilot agent harness: options.tools forwarded with [a-zA-Z0-9_-] name sanitization + back-mapping; toolMode Auto→tool_choice auto, Required→required on kimi-k3 only (others degrade to auto); image tool results annotated as omitted; see docs/copilot-harness.md

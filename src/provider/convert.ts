@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { LANGUAGE_MODEL_CHAT_SYSTEM_ROLE } from '../consts';
+import { t } from '../i18n';
 import { safeStringify } from '../json';
 import type { KimiMessage, KimiTool, KimiToolCall } from '../types';
 
@@ -17,10 +18,30 @@ interface PendingToolResult {
 	content: string;
 }
 
+/** Kimi function names must match [a-zA-Z0-9_-] and be at most 128 chars. */
+const TOOL_NAME_MAX_LENGTH = 128;
+const TOOL_NAME_FALLBACK = 'tool';
+
+/** Rewrite a VS Code tool name into a Kimi-safe wire name (deterministic). */
+export function sanitizeToolName(name: string): string {
+	const cleaned = name.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, TOOL_NAME_MAX_LENGTH);
+	return cleaned || TOOL_NAME_FALLBACK;
+}
+
+/** Converted tool set plus the bidirectional name maps for history replay and call-back. */
+export interface ConvertedTools {
+	tools: KimiTool[];
+	/** wire (sanitized) name → original VS Code tool name, used when reporting tool calls back. */
+	nameMap: Map<string, string>;
+	/** original VS Code tool name → wire name, used when replaying history tool calls. */
+	wireNames: Map<string, string>;
+}
+
 /** Convert VS Code chat messages to Kimi (OpenAI-compatible) wire messages. */
 export function convertMessages(
 	messages: readonly vscode.LanguageModelChatRequestMessage[],
 	isThinkingModel: boolean,
+	wireNameOf?: (name: string) => string,
 ): KimiMessage[] {
 	const result: KimiMessage[] = [];
 	for (const message of messages) {
@@ -39,16 +60,28 @@ export function convertMessages(
 					id: part.callId,
 					type: 'function',
 					function: {
-						name: part.name,
+						/** History tool calls are replayed under the same wire name the model saw. */
+						name: wireNameOf ? wireNameOf(part.name) : part.name,
 						arguments: safeStringify(part.input),
 					},
 				});
 			} else if (part instanceof vscode.LanguageModelToolResultPart) {
 				let toolContent = '';
+				let imageCount = 0;
 				for (const item of part.content) {
 					if (item instanceof vscode.LanguageModelTextPart) {
 						toolContent += item.value;
+					} else if (
+						item instanceof vscode.LanguageModelDataPart &&
+						item.mimeType.startsWith('image/')
+					) {
+						imageCount++;
 					}
+				}
+				/** Kimi tool results are text-only; note dropped images (e.g. subagent screenshots). */
+				if (imageCount > 0) {
+					const note = t('request.imageToolResultOmitted', String(imageCount));
+					toolContent = toolContent ? `${toolContent}\n${note}` : note;
 				}
 				toolResults.push({
 					callId: part.callId,
@@ -103,16 +136,37 @@ export function mapRole(role: vscode.LanguageModelChatMessageRole): 'system' | '
 	return 'user';
 }
 
-/** Convert VS Code tool definitions to Kimi tool definitions. */
-export function convertTools(tools: readonly vscode.LanguageModelChatTool[]): KimiTool[] {
-	return tools.map((tool) => ({
-		type: 'function',
-		function: {
-			name: tool.name,
-			description: tool.description,
-			parameters: tool.inputSchema,
-		},
-	}));
+/** Convert VS Code tool definitions to Kimi tool definitions with name sanitization. */
+export function convertTools(tools: readonly vscode.LanguageModelChatTool[]): ConvertedTools {
+	const result: KimiTool[] = [];
+	const nameMap = new Map<string, string>();
+	const wireNames = new Map<string, string>();
+	const used = new Set<string>();
+	for (const tool of tools) {
+		let wire = sanitizeToolName(tool.name);
+		if (used.has(wire)) {
+			let n = 2;
+			let candidate = wire;
+			while (used.has(candidate)) {
+				const suffix = `_${n}`;
+				candidate = `${wire.slice(0, TOOL_NAME_MAX_LENGTH - suffix.length)}${suffix}`;
+				n++;
+			}
+			wire = candidate;
+		}
+		used.add(wire);
+		nameMap.set(wire, tool.name);
+		wireNames.set(tool.name, wire);
+		result.push({
+			type: 'function',
+			function: {
+				name: wire,
+				description: tool.description,
+				parameters: tool.inputSchema,
+			},
+		});
+	}
+	return { tools: result, nameMap, wireNames };
 }
 
 /** Sum content, reasoning, and tool-call chars to calibrate chars-per-token. */

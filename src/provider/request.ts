@@ -12,7 +12,7 @@ import type {
 	ThinkingEffort,
 	ThinkingEffortSpec,
 } from '../types';
-import { convertMessages, convertTools, countMessageChars } from './convert';
+import { convertMessages, convertTools, countMessageChars, sanitizeToolName } from './convert';
 
 interface PrepareChatRequestArgs {
 	authManager: IAuthManager;
@@ -28,6 +28,8 @@ export interface PreparedChatRequest {
 	request: KimiChatRequest;
 	totalRequestChars: number;
 	isThinkingModel: boolean;
+	/** wire (sanitized) tool name → original VS Code tool name, used to restore names on streamed calls. */
+	toolNameMap: Map<string, string>;
 }
 
 /** Build the Kimi client and request body for one Copilot Chat turn. */
@@ -48,12 +50,22 @@ export async function prepareChatRequest({
 	const isThinkingModel = modelDef?.capabilities.thinking ?? false;
 	const toolCalling = modelDef?.capabilities.toolCalling ?? false;
 	const toolLimit = typeof toolCalling === 'number' ? toolCalling : DEFAULT_TOOLS_LIMIT;
-	const kimiMessages = convertMessages(messages, isThinkingModel);
-	const tools: KimiTool[] | undefined = toolCalling ? convertTools(options.tools ?? []) : undefined;
+	const converted = toolCalling ? convertTools(options.tools ?? []) : undefined;
+	const tools: KimiTool[] | undefined = converted?.tools;
 	if (tools && tools.length > toolLimit) {
 		throw new Error(t('request.toolsLimitExceeded', String(toolLimit), String(tools.length)));
 	}
 	const hasTools = !!(tools && tools.length > 0);
+	/**
+	 * Copilot harness contract: `Required` means the model must call one of the provided tools
+	 * (e.g. when the user pins `#tool:...`). Kimi only accepts `tool_choice: "required"` on
+	 * `kimi-k3`; other models reject it with HTTP 400, so they degrade to `"auto"` instead.
+	 */
+	const requiresToolCall =
+		hasTools && options.toolMode === vscode.LanguageModelChatToolMode.Required;
+	const supportsRequired = modelDef?.capabilities.requiredToolChoice === true;
+	const wireNames = converted?.wireNames ?? new Map<string, string>();
+	const kimiMessages = convertMessages(messages, isThinkingModel, (name) => wireNames.get(name) ?? sanitizeToolName(name));
 	const effortSpec = modelDef?.capabilities.thinkingEffort;
 	const thinkingFields = resolveThinkingFields(effortSpec, modelInfo.id, options);
 	const request: KimiChatRequest = {
@@ -61,12 +73,12 @@ export async function prepareChatRequest({
 		messages: kimiMessages,
 		stream: true,
 		tools: hasTools ? tools : undefined,
-		tool_choice: hasTools ? 'auto' : undefined,
+		tool_choice: hasTools ? (requiresToolCall && supportsRequired ? 'required' : 'auto') : undefined,
 		max_tokens: getMaxTokens(),
 		...thinkingFields,
 	};
 	const totalRequestChars = countMessageChars(kimiMessages);
-	return { client, request, totalRequestChars, isThinkingModel };
+	return { client, request, totalRequestChars, isThinkingModel, toolNameMap: converted?.nameMap ?? new Map<string, string>() };
 }
 
 /**

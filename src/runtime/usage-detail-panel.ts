@@ -84,7 +84,7 @@ export class UsageDetailPanel {
 
 	/**
 	 * Build the full panel HTML document. Uses a gate-failed fallback message when `message` is null.
-	 * Inline scripts run under a nonce CSP.
+	 * Inline scripts run under a nonce CSP; reset-countdown timers are hydrated via `resetsAtMap`.
 	 */
 	private buildHtml(message: UsagePanelMessage | null): string {
 		const nonce = getNonce();
@@ -105,7 +105,7 @@ export class UsageDetailPanel {
 				: renderStatusBody(effective);
 
 		return /* html */ `<!DOCTYPE html>
-<html lang="en">
+<html lang="${escapeHtml(vscode.env.language)}">
 <head>
 	<meta charset="UTF-8" />
 	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'" />
@@ -117,11 +117,14 @@ export class UsageDetailPanel {
 	</style>
 </head>
 <body>
-	<div class="header">
-		<h1>${escapeHtml(effective.strings.title)}</h1>
-		<button id="refresh" class="btn">${escapeHtml(effective.strings.refresh)}</button>
-	</div>
-	<div id="content">${body}</div>
+	<main class="page">
+		<header class="header">
+			<div class="heading"><h1>${escapeHtml(effective.strings.title)}</h1></div>
+			<button id="refresh" class="btn btn-secondary"><span aria-hidden="true">↻</span> ${escapeHtml(effective.strings.refresh)}</button>
+		</header>
+		<div id="content">${body}</div>
+		${renderFooter(effective)}
+	</main>
 	<script nonce="${nonce}">
 		const vscode = acquireVsCodeApi();
 		document.getElementById('refresh').addEventListener('click', () => vscode.postMessage({ type: 'refresh' }));
@@ -163,57 +166,100 @@ export class UsageDetailPanel {
 	}
 }
 
-/** Render the HTML body for the `ok` status: plan header, metric bars, optional balance section, footer. */
+/** Render the HTML body for the `ok` status: plan meta, metric cards, optional balance hero. */
 function renderOkBody(msg: UsagePanelMessage): string {
 	const s = msg.strings;
 	const lines: string[] = [];
-	if (msg.planName) {
-		lines.push(`<div class="plan">${escapeHtml(s.plan.replace('{0}', msg.planName))}</div>`);
+	if (msg.planName || msg.renewsAt) {
+		const meta: string[] = [];
+		if (msg.planName) {
+			meta.push(escapeHtml(s.plan.replace('{0}', msg.planName)));
+		}
+		if (msg.renewsAt) {
+			meta.push(escapeHtml(s.renewsAt.replace('{0}', msg.renewsAt)));
+		}
+		lines.push(`<div class="plan-meta">${meta.join('<span class="meta-sep">·</span>')}</div>`);
 	}
-	if (msg.renewsAt) {
-		lines.push(`<div class="plan">${escapeHtml(s.renewsAt.replace('{0}', msg.renewsAt))}</div>`);
-	}
-	for (const metric of msg.metrics) {
-		const valueLabel = `${metric.used}%`;
-		lines.push(`<div class="metric">
-			<div class="metric-head"><span class="metric-label">${escapeHtml(metric.label)}</span><span class="metric-window">${escapeHtml(metric.window)}</span></div>
-			<div class="bar"><div class="bar-fill" id="fill-${escapeHtml(metric.kind)}"></div></div>
-			<div class="metric-value">${escapeHtml(valueLabel)}</div>
-			${metric.resetsAt ? `<div id="resets-${escapeHtml(metric.kind)}" class="resets"></div>` : ''}
-		</div>`);
+	if (msg.metrics.length > 0) {
+		lines.push(`<section class="metrics-section"><div class="metrics-grid">`);
+		for (const metric of msg.metrics) {
+			const exhausted = metricPercentOf(metric) >= 100;
+			const note = exhausted ? `<span class="used-label">${escapeHtml(s.exhausted)}</span>` : '';
+			lines.push(`<article class="metric-card${exhausted ? ' metric-warning' : ''}">
+				<div class="metric-head"><span class="metric-label">${escapeHtml(metric.label)}</span><span class="metric-window">${escapeHtml(metric.window)}</span></div>
+				<div class="bar"><div class="bar-fill" id="fill-${escapeHtml(metric.kind)}"></div></div>
+				<div class="metric-value">${escapeHtml(`${metric.used}%`)}${note}</div>
+				${metric.resetsAt ? `<div id="resets-${escapeHtml(metric.kind)}" class="resets"></div>` : ''}
+			</article>`);
+		}
+		lines.push(`</div></section>`);
 	}
 	if (msg.balance) {
 		lines.push(renderBalanceBody(msg));
 	}
-	if (msg.lastUpdated !== undefined) {
-		lines.push(`<div class="last-updated">${escapeHtml(s.lastUpdated.replace('{0}', new Date(msg.lastUpdated).toLocaleTimeString()))}</div>`);
-	}
-	if (msg.offline) {
-		lines.push(`<div class="offline">${escapeHtml(s.offline)}</div>`);
-	}
 	return lines.join('');
 }
 
-/** Render the HTML for the balance section: available / voucher / cash / booster rows. */
+/** Clamped 0..100 percent for a metric view (mirrors `metricPercent` in usage-detail-html). */
+function metricPercentOf(metric: UsagePanelMessage['metrics'][number]): number {
+	const raw = metric.isPercent ? metric.used : Math.round((metric.used / Math.max(metric.limit, 1)) * 100);
+	return Math.min(Math.max(raw, 0), 100);
+}
+
+/**
+ * Render the HTML for the balance section: one hero card with the available amount plus a
+ * separated supporting-rows block for voucher and cash.
+ */
 function renderBalanceBody(msg: UsagePanelMessage): string {
 	const s = msg.strings;
 	const b = msg.balance!;
 	const c = msg.currency;
-	const lines: string[] = [`<div class="balance-section"><h2>${escapeHtml(s.balanceSection)}</h2>`];
-	if (b.availableBalance !== undefined) {
-		lines.push(`<div class="balance-row balance-available"><span>${escapeHtml(s.balanceAvailable)}</span><span class="balance-value">${escapeHtml(c)}${escapeHtml(b.availableBalance)}</span></div>`);
+	const exhausted = b.availableBalance !== undefined && Number.parseFloat(b.availableBalance) <= 0;
+	const lines: string[] = [
+		`<section class="balance-section"><h2>${escapeHtml(s.balanceSection)}</h2>`,
+	];
+	if (exhausted) {
+		lines.push(`<div class="insufficient">${escapeHtml(s.exhausted)}</div>`);
 	}
+	const meta: string[] = [];
 	if (b.voucherBalance !== undefined) {
-		lines.push(`<div class="balance-row"><span>${escapeHtml(s.balanceVoucher)}</span><span class="balance-value">${escapeHtml(c)}${escapeHtml(b.voucherBalance)}</span></div>`);
+		meta.push(renderBalanceRow(s.balanceVoucher, `${escapeHtml(c)}${escapeHtml(b.voucherBalance)}`));
 	}
 	if (b.cashBalance !== undefined) {
-		lines.push(`<div class="balance-row"><span>${escapeHtml(s.balanceCash)}</span><span class="balance-value">${escapeHtml(c)}${escapeHtml(b.cashBalance)}</span></div>`);
+		meta.push(renderBalanceRow(s.balanceCash, `${escapeHtml(c)}${escapeHtml(b.cashBalance)}`));
 	}
-	if (b.booster !== undefined) {
-		lines.push(`<div class="balance-row"><span>${escapeHtml(s.balanceBooster)}</span><span class="balance-value">${escapeHtml(c)}${escapeHtml(b.booster)}</span></div>`);
-	}
-	lines.push('</div>');
+	const hero =
+		b.availableBalance !== undefined
+			? `<div class="metric-value"><span class="hero-currency">${escapeHtml(c)}</span>${escapeHtml(b.availableBalance)}<span class="used-label">${escapeHtml(s.balanceAvailable)}</span></div>`
+			: `<div class="metric-value muted-value">—</div>`;
+	lines.push(`<article class="balance-card">
+		<div class="balance-head"><h3>${escapeHtml(s.balanceAvailable)}</h3></div>
+		${hero}
+		${meta.length > 0 ? `<div class="balance-meta">${meta.join('')}</div>` : ''}
+	</article>
+	</section>`);
 	return lines.join('');
+}
+
+/** Render one supporting balance row (label left, formatted value right). */
+function renderBalanceRow(label: string, value: string): string {
+	return `<div class="balance-row"><span>${escapeHtml(label)}</span><span class="balance-value">${value}</span></div>`;
+}
+
+/** Render the page footer: offline badge and last-updated timestamp. */
+function renderFooter(msg: UsagePanelMessage): string {
+	const parts: string[] = [];
+	if (msg.offline) {
+		parts.push(`<span class="offline">${escapeHtml(msg.strings.offline)}</span>`);
+	}
+	if (msg.lastUpdated !== undefined) {
+		parts.push(
+			`<span class="last-updated">${escapeHtml(
+				msg.strings.lastUpdated.replace('{0}', new Date(msg.lastUpdated).toLocaleTimeString()),
+			)}</span>`,
+		);
+	}
+	return parts.length > 0 ? `<footer class="page-footer">${parts.join('')}</footer>` : '';
 }
 
 /** Render the HTML body for non-ok statuses: a centered message, plus a Set-Key button on auth errors. */
@@ -232,35 +278,52 @@ function renderStatusBody(msg: UsagePanelMessage): string {
 /** Generate the panel's theme CSS string, switching colors by dark/light token. */
 function themeCss(theme: 'dark' | 'light'): string {
 	const dark = theme === 'dark';
-	const fg = dark ? '#cccccc' : '#313033';
-	const muted = dark ? '#9d9d9d' : '#6d6d6d';
-	const accent = dark ? '#3794ff' : '#0066b8';
-	const barBg = dark ? '#3a3d41' : '#d4d4d4';
-	const border = dark ? '#2d2d2d' : '#e5e5e5';
 	return `
-		body { font-family: var(--vscode-font-family, sans-serif); color: ${fg}; padding: 16px 20px; margin: 0; }
-		.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-		h1 { font-size: 1.1rem; margin: 0; font-weight: 600; }
-		.btn { background: var(--vscode-button-background, ${accent}); color: var(--vscode-button-foreground, #fff); border: none; padding: 4px 12px; border-radius: 2px; cursor: pointer; font-size: 0.85rem; }
-		.btn:hover { opacity: 0.9; }
-		.plan { color: ${muted}; font-size: 0.9rem; margin-bottom: 2px; }
-		.metric { margin: 14px 0; padding-bottom: 14px; border-bottom: 1px solid ${border}; }
-		.metric-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
-		.metric-label { font-weight: 600; }
-		.metric-window { color: ${muted}; font-size: 0.85rem; }
-		.bar { background: ${barBg}; border-radius: 2px; height: 8px; overflow: hidden; }
-		.bar-fill { background: ${accent}; height: 100%; width: 0; transition: width 0.2s; }
-		.metric-value { margin-top: 4px; font-size: 0.9rem; }
-		.resets { color: ${muted}; font-size: 0.8rem; margin-top: 2px; }
-		.balance-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid ${barBg}; }
-		.balance-section h2 { font-size: 1rem; margin-bottom: 12px; color: ${fg}; }
-		.balance-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.95rem; border-bottom: 1px solid ${border}; }
-		.balance-available { font-size: 1.15rem; font-weight: 600; border-bottom: 2px solid ${accent}; padding: 10px 0; }
-		.balance-value { font-weight: 600; }
-		.last-updated { color: ${muted}; font-size: 0.8rem; margin-top: 12px; }
-		.offline { color: ${muted}; font-size: 0.8rem; font-style: italic; margin-top: 4px; }
-		.status-message { text-align: center; padding: 40px 16px; color: ${muted}; }
-		.status-message p { margin-bottom: 16px; }
+		:root { color-scheme: ${dark ? 'dark' : 'light'}; --fg: var(--vscode-foreground, ${dark ? '#d4d4d4' : '#252526'}); --muted: var(--vscode-descriptionForeground, ${dark ? '#a1a1aa' : '#66666f'}); --accent: var(--vscode-textLink-foreground, ${dark ? '#75beff' : '#006ab1'}); --border: var(--vscode-widget-border, ${dark ? '#3b3b3f' : '#dedee3'}); --surface: var(--vscode-sideBar-background, ${dark ? '#252526' : '#f8f8fa'}); --warn: var(--vscode-notificationsWarningIcon-foreground, ${dark ? '#d7ba7d' : '#986800'}); }
+		* { box-sizing: border-box; }
+		body { margin: 0; color: var(--fg); background: var(--vscode-editor-background, ${dark ? '#1f1f1f' : '#ffffff'}); font-family: var(--vscode-font-family, system-ui, sans-serif); font-size: 13px; line-height: 1.5; }
+		.page { max-width: 960px; margin: 0 auto; padding: 28px; }
+		.header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 24px; }
+		.heading { min-width: 0; }
+		h1 { margin: 0; font-size: 22px; line-height: 1.3; font-weight: 600; letter-spacing: -0.4px; }
+		h2 { margin: 0 0 12px; font-size: 14px; }
+		.btn { display: inline-flex; justify-content: center; align-items: center; gap: 6px; flex-shrink: 0; min-height: 34px; padding: 6px 12px; font: inherit; font-weight: 500; border: 1px solid transparent; border-radius: 5px; cursor: pointer; background: var(--vscode-button-background, #0078d4); color: var(--vscode-button-foreground, #ffffff); transition: background 0.15s; }
+		.btn:hover { filter: brightness(1.08); }
+		.btn-secondary { color: var(--fg); border-color: var(--border); background: transparent; }
+		.btn-secondary:hover { background: var(--vscode-toolbar-hoverBackground, ${dark ? '#ffffff0d' : '#00000008'}); }
+		.btn:focus-visible { outline: 2px solid var(--vscode-focusBorder, #007fd4); outline-offset: 3px; }
+		.plan-meta { color: var(--muted); font-size: 12px; margin-bottom: 16px; }
+		.meta-sep { margin: 0 6px; opacity: 0.6; }
+		.metrics-section, .balance-section { margin-top: 20px; }
+		.metrics-section:first-child, .balance-section:first-child { margin-top: 0; }
+		.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+		.metric-card { min-width: 0; padding: 18px 20px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); }
+		.metric-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+		.metric-label { font-weight: 600; font-size: 13px; }
+		.metric-window { color: var(--muted); font-size: 11px; }
+		.bar { height: 6px; border-radius: 4px; overflow: hidden; background: var(--vscode-progressBar-background, ${dark ? '#75beff' : '#0078d4'}); background: color-mix(in srgb, var(--fg) 12%, transparent); }
+		.bar-fill { height: 100%; width: 0; border-radius: inherit; background: var(--accent); transition: width 0.2s; }
+		.metric-warning .bar-fill { background: var(--warn); }
+		.metric-value { display: flex; align-items: baseline; flex-wrap: wrap; margin: 12px 0 4px; font-size: 26px; font-weight: 600; line-height: 1.1; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+		.metric-value.muted-value { color: var(--muted); }
+		.hero-currency { font-size: 19px; color: var(--muted); margin-right: 6px; letter-spacing: 0; }
+		.used-label { font-size: 11px; font-weight: 400; color: var(--warn); margin-left: 8px; letter-spacing: 0; }
+		.resets { color: var(--muted); font-size: 11px; margin-top: 6px; }
+		.balance-card { min-width: 0; padding: 22px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); }
+		.balance-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+		.balance-head h3 { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+		.balance-meta { margin-top: 14px; padding-top: 8px; border-top: 1px solid var(--border); }
+		.balance-row { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; font-size: 13px; }
+		.balance-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+		.insufficient { margin-bottom: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 7px; color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+		.page-footer { display: flex; flex-wrap: wrap; gap: 6px 20px; color: var(--muted); font-size: 11px; margin-top: 18px; }
+		.last-updated { margin-left: auto; }
+		.offline { color: var(--warn); }
+		.status-message { text-align: center; padding: 40px 20px; color: var(--muted); border: 1px solid var(--border); border-radius: 9px; }
+		.status-message p { margin: 0 0 16px; }
+		@media (max-width: 720px) { .metrics-grid { grid-template-columns: 1fr; } }
+		@media (max-width: 480px) { .page { padding: 20px 16px; } .header { gap: 12px; } .metric-card, .balance-card { padding: 18px; } .last-updated { margin-left: 0; } }
+		@media (prefers-reduced-motion: reduce) { .bar-fill, .btn { transition: none; } }
 	`;
 }
 

@@ -17,8 +17,6 @@ export interface UsageBalanceView {
 	availableBalance?: string;
 	voucherBalance?: string;
 	cashBalance?: string;
-	/** Booster (Extra Usage) wallet remaining, when populated from the membership API. */
-	booster?: string;
 }
 
 export interface UsagePanelMessage {
@@ -52,7 +50,6 @@ export interface UsagePanelStrings {
 	balanceAvailable: string;
 	balanceVoucher: string;
 	balanceCash: string;
-	balanceBooster: string;
 	exhausted: string;
 }
 
@@ -106,7 +103,6 @@ function toBalanceView(balance: UsageBalance): UsageBalanceView {
 		availableBalance: formatAmount(balance.availableBalance),
 		voucherBalance: formatAmount(balance.voucherBalance),
 		cashBalance: formatAmount(balance.cashBalance),
-		booster: formatAmount(balance.availableBalance),
 	};
 }
 

@@ -38,7 +38,6 @@ export function usagePanelStrings(): UsagePanelStrings {
 		balanceAvailable: t('usage.balance.available'),
 		balanceVoucher: t('usage.balance.voucher'),
 		balanceCash: t('usage.balance.cash'),
-		balanceBooster: t('usage.balance.booster'),
 		exhausted: t('usage.tooltip.exhausted'),
 	};
 }
