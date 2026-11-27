@@ -73,13 +73,13 @@ export interface CustomModelConfig {
 
 // ---- Usage tracking (membership quota + Standard API balance) ----
 
-export type UsageMetricKind = 'session' | 'weekly' | 'web-searches';
+export type UsageMetricKind = 'session' | 'weekly' | 'monthly-total' | 'monthly-code' | 'web-searches';
 
 export interface UsageMetric {
 	kind: UsageMetricKind;
-	/** Percentage (0-100) for session/weekly; count used for web-searches. */
+	/** Percentage for membership quota windows; count used for web-searches. */
 	used: number;
-	/** 100 for session/weekly; monthly total for web-searches. */
+	/** 100 for membership quota windows; monthly total for web-searches. */
 	limit: number;
 	/** Epoch-ms when the window resets. */
 	resetsAt?: number;
@@ -109,7 +109,7 @@ export interface UsageSnapshot {
 	planName?: string;
 	/** ISO date string when the membership renews (membership mode only). */
 	renewsAt?: string;
-	/** 0..2 metrics, ordered session (weekly quota %), weekly (5h window %). Membership mode only. */
+	/** Membership quota windows, ordered weekly (`session`), 5h (`weekly`), then monthly. */
 	metrics: UsageMetric[];
 	/** Cash + voucher balance. Standard API mode only. */
 	balance?: UsageBalance;

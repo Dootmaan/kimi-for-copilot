@@ -17,8 +17,8 @@ const strings: UsagePanelStrings = {
 	resetsIn: 'Resets in {0}',
 	plan: 'Plan: {0}',
 	renewsAt: 'Renews: {0}',
-	window: { session: '5h rolling', weekly: '7-day rolling', 'web-searches': 'Monthly' },
-	label: { session: '5h window', weekly: 'Weekly quota', 'web-searches': 'Web Searches' },
+	window: { session: '7-day rolling', weekly: '5h rolling', 'monthly-total': 'Monthly', 'monthly-code': 'Monthly', 'web-searches': 'Monthly' },
+	label: { session: 'Weekly quota', weekly: '5h window', 'monthly-total': 'Total monthly quota', 'monthly-code': 'Kimi Code monthly quota', 'web-searches': 'Web Searches' },
 	status: {
 		ok: '', loading: 'Refreshing…', 'no-data': 'No usage data.',
 		'auth-error': 'API key invalid.', 'network-error': 'Usage unavailable (offline).',
@@ -49,8 +49,23 @@ describe('buildUsageMessage', () => {
 		expect(msg?.planName).toBe('Moderato');
 		expect(msg?.renewsAt).toBe('2026-08-01');
 		expect(msg?.metrics).toHaveLength(2);
-		expect(msg?.metrics[0]).toMatchObject({ kind: 'session', label: '5h window', used: 40, limit: 100, isPercent: true });
-		expect(msg?.metrics[1]).toMatchObject({ kind: 'weekly', label: 'Weekly quota', used: 15, limit: 100 });
+		expect(msg?.metrics[0]).toMatchObject({ kind: 'session', label: 'Weekly quota', used: 40, limit: 100, isPercent: true });
+		expect(msg?.metrics[1]).toMatchObject({ kind: 'weekly', label: '5h window', used: 15, limit: 100 });
+	});
+
+	it('includes both monthly quota rows in the panel', () => {
+		const snap: UsageSnapshot = {
+			status: 'ok', fetchedAt: 1_000_000,
+			metrics: [
+				{ kind: 'monthly-total', used: 15, limit: 100 },
+				{ kind: 'monthly-code', used: 25, limit: 100 },
+			],
+		};
+		const msg = buildUsageMessage(snap, false, strings, 'dark', '$');
+		expect(msg?.metrics).toMatchObject([
+			{ kind: 'monthly-total', label: 'Total monthly quota', window: 'Monthly', used: 15, isPercent: true },
+			{ kind: 'monthly-code', label: 'Kimi Code monthly quota', window: 'Monthly', used: 25, isPercent: true },
+		]);
 	});
 
 	it('maps ok with balance only (standard API)', () => {

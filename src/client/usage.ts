@@ -16,7 +16,22 @@ interface KimiBalanceResponse {
 interface KimiMembershipUsageResponse {
 	usage?: RawUsageRow;
 	limits?: RawUsageLimit[];
+	usages?: Partial<Record<MembershipUsageWindow, RawUsageRatio>>;
 	boosterWallet?: RawBoosterWallet;
+}
+
+const MEMBERSHIP_USAGE_WINDOWS = [
+	['limit_7d', 'session'],
+	['limit_5h', 'weekly'],
+	['limit_month_total', 'monthly-total'],
+	['limit_month_code', 'monthly-code'],
+] as const satisfies readonly (readonly [string, UsageMetric['kind']])[];
+
+type MembershipUsageWindow = typeof MEMBERSHIP_USAGE_WINDOWS[number][0];
+
+interface RawUsageRatio {
+	used_ratio?: number;
+	reset_time?: string;
 }
 
 interface RawUsageRow {
@@ -44,7 +59,7 @@ interface RawBoosterWallet {
 export interface IUsageClient {
 	/** Fetch Standard API balance (available + voucher + cash) as a {@link UsageSnapshot}. */
 	fetchBalance(apiKey: string, signal?: AbortSignal): Promise<UsageSnapshot>;
-	/** Fetch Kimi Code membership quota (weekly/5h windows + booster wallet) as a {@link UsageSnapshot}. */
+	/** Fetch Kimi Code membership quotas and booster wallet as a {@link UsageSnapshot}. */
 	fetchMembershipUsage(apiKey: string, signal?: AbortSignal): Promise<UsageSnapshot>;
 }
 
@@ -112,10 +127,8 @@ export class UsageClient implements IUsageClient {
 	}
 
 	/**
-	 * Fetch Kimi Code membership usage (weekly quota + 5h window + booster wallet). The membership
-	 * endpoint returns `usage` (summary) + `limits` (detailed windows) + `boosterWallet` (Extra Usage).
-	 * The summary maps to a `session` metric (weekly %), the 5h-style limit to a `weekly` metric, and
-	 * the booster wallet balance to `balance`. Throws aborts; maps failures to error statuses.
+	 * Fetch Kimi Code membership quotas and booster wallet. Prefer the legacy quota counters when
+	 * present and fall back to the ratios in `usages`. Throws aborts; maps failures to error statuses.
 	 */
 	async fetchMembershipUsage(apiKey: string, signal?: AbortSignal): Promise<UsageSnapshot> {
 		const host = this.resolveHost();
@@ -252,6 +265,18 @@ function buildMembershipMetrics(response: KimiMembershipUsageResponse): UsageMet
 			limit: 100,
 			resetsAt: parseResetMs(fiveHour.resetAt ?? fiveHour.reset_at),
 		});
+	}
+	if (metrics.length === 0 && response.usages) {
+		for (const [window, kind] of MEMBERSHIP_USAGE_WINDOWS) {
+			const entry = response.usages[window];
+			const ratio = entry?.used_ratio;
+			if (typeof ratio !== 'number' || !Number.isFinite(ratio) || ratio < 0) {
+				continue;
+			}
+			// Keep the displayed percentage below 100 until the quota is actually exhausted.
+			const used = ratio >= 1 ? 100 : Math.min(Math.round(ratio * 10_000) / 100, 99.99);
+			metrics.push({ kind, used, limit: 100, resetsAt: parseResetMs(entry?.reset_time) });
+		}
 	}
 	return metrics;
 }
