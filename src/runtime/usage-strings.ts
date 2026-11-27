@@ -17,13 +17,17 @@ export function usagePanelStrings(): UsagePanelStrings {
 		plan: t('usage.plan.label'),
 		renewsAt: t('usage.plan.renewsAt'),
 		window: {
-			session: t('usage.metric.window.session'),
-			weekly: t('usage.metric.window.weekly'),
+			session: t('usage.metric.window.weekly'),
+			weekly: t('usage.metric.window.session'),
+			'monthly-total': t('usage.metric.window.monthly'),
+			'monthly-code': t('usage.metric.window.monthly'),
 			'web-searches': t('usage.metric.window.webSearches'),
 		},
 		label: {
-			session: t('usage.metric.session'),
-			weekly: t('usage.metric.weekly'),
+			session: t('usage.metric.weekly'),
+			weekly: t('usage.metric.session'),
+			'monthly-total': t('usage.metric.monthlyTotal'),
+			'monthly-code': t('usage.metric.monthlyCode'),
 			'web-searches': t('usage.metric.webSearches'),
 		},
 		status: {

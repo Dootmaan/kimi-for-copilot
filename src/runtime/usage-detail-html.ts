@@ -1,7 +1,7 @@
 import type { UsageBalance, UsageMetric, UsageSnapshot, UsageStatus } from '../types';
 import { formatAmount } from './format';
 
-/** Render-ready metric row (session / weekly / web-searches) for the detail panel. */
+/** Render-ready quota metric for the detail panel. */
 export interface UsageMetricView {
 	kind: UsageMetric['kind'];
 	label: string;
@@ -73,7 +73,7 @@ export function buildUsageMessage(
 		planName: snapshot.planName,
 		renewsAt: snapshot.renewsAt,
 		metrics: (snapshot.metrics ?? [])
-			.filter((m) => m.kind === 'session' || m.kind === 'weekly')
+			.filter((m) => m.kind !== 'web-searches')
 			.map(toMetricView, strings),
 		balance: snapshot.balance ? toBalanceView(snapshot.balance) : undefined,
 		currency,
@@ -106,7 +106,7 @@ function toBalanceView(balance: UsageBalance): UsageBalanceView {
 	};
 }
 
-/** Bar fill width for a metric, as a clamped 0..100 integer percent. */
+/** Bar fill width for a metric, as a clamped 0..100 percent. */
 export function metricPercent(view: UsageMetricView): number {
 	return Math.min(Math.max(view.isPercent ? view.used : Math.round((view.used / Math.max(view.limit, 1)) * 100), 0), 100);
 }

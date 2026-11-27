@@ -139,6 +139,55 @@ describe('UsageClient.fetchMembershipUsage', () => {
 		expect(snap.balance?.availableBalance).toBe(100); // 10000000000 / 1_000_000 / 100 = 100
 	});
 
+	it('prefers legacy counters when both formats are present', async () => {
+		const body = JSON.stringify({
+			...JSON.parse(MEMBERSHIP_OK),
+			usages: { limit_7d: { used_ratio: 0 }, limit_5h: { used_ratio: 0 } },
+		});
+		const client = new UsageClient('https://api.kimi.com', undefined, mockFetch({ status: 200, body }));
+		const snap = await client.fetchMembershipUsage('token');
+		expect(snap.metrics.map((metric) => metric.used)).toEqual([4, 1]);
+	});
+
+	it('reads the 5-hour and monthly ratios when legacy counters are absent', async () => {
+		const fiveHourReset = '2026-11-27T19:00:00Z';
+		const monthlyReset = '2026-12-01T00:00:00Z';
+		const body = JSON.stringify({
+			limits: [{
+				window: { duration: 300, timeUnit: 'TIME_UNIT_MINUTE' },
+				detail: { limit: '100', remaining: '75', resetTime: fiveHourReset },
+			}],
+			usages: {
+				limit_5h: { used_ratio: 0.25, reset_time: fiveHourReset },
+				limit_month_total: { used_ratio: 0, reset_time: monthlyReset },
+				limit_month_code: { used_ratio: 0.99999, reset_time: monthlyReset },
+			},
+		});
+		const client = new UsageClient('https://api.kimi.com', undefined, mockFetch({ status: 200, body }));
+		const snap = await client.fetchMembershipUsage('token');
+		expect(snap.status).toBe('ok');
+		expect(snap.metrics).toEqual([
+			{ kind: 'weekly', used: 25, limit: 100, resetsAt: Date.parse(fiveHourReset) },
+			{ kind: 'monthly-total', used: 0, limit: 100, resetsAt: Date.parse(monthlyReset) },
+			{ kind: 'monthly-code', used: 99.99, limit: 100, resetsAt: Date.parse(monthlyReset) },
+		]);
+	});
+
+	it('reads a weekly ratio and skips unsupported or invalid entries', async () => {
+		const body = JSON.stringify({
+			usages: {
+				limit_7d: { used_ratio: 1 },
+				limit_5h: { used_ratio: null },
+				limit_month_total: { used_ratio: -1 },
+				unknown_window: { used_ratio: 0.8 },
+			},
+		});
+		const client = new UsageClient('https://api.kimi.com', undefined, mockFetch({ status: 200, body }));
+		const snap = await client.fetchMembershipUsage('token');
+		expect(snap.status).toBe('ok');
+		expect(snap.metrics).toEqual([{ kind: 'session', used: 100, limit: 100 }]);
+	});
+
 	it('returns no-data when response is empty', async () => {
 		const client = new UsageClient('https://api.kimi.com', undefined, mockFetch({ status: 200, body: MEMBERSHIP_NO_DATA }));
 		const snap = await client.fetchMembershipUsage('token');

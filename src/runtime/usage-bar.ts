@@ -17,7 +17,7 @@ interface UsageStatusBarServices {
 }
 
 /**
- * Status-bar item showing Kimi usage. Membership mode shows weekly/5h quota % + booster balance;
+ * Status-bar item showing Kimi usage. Membership mode shows quota percentages and booster balance;
  * Standard API mode shows cash + voucher balance. Both apiModes × both regions are supported.
  * Constructed inside `registerProvider` (where AuthManager lives). Registers its own refresh command.
  *
@@ -266,7 +266,7 @@ export class UsageStatusBar implements vscode.Disposable {
 		this.renderOkBarBalance(snapshot, offline);
 	}
 
-	/** Status-bar rendering for the membership quota (weekly/5h metrics). */
+	/** Status-bar rendering for membership quotas. */
 	private renderOkBarMetrics(snapshot: UsageSnapshot, offline: boolean): void {
 		const primary = snapshot.metrics.find((m) => m.kind === 'session') ?? snapshot.metrics[0];
 		this.item.text = primary ? t('usage.status.ok.short', String(primary.used)) : '$(sparkle) Kimi';
@@ -277,9 +277,9 @@ export class UsageStatusBar implements vscode.Disposable {
 		if (snapshot.renewsAt) {
 			lines.push(t('usage.plan.renewsAt', snapshot.renewsAt));
 		}
+		const { label } = usagePanelStrings();
 		for (const metric of snapshot.metrics) {
-			const label = metric.kind === 'session' ? t('usage.metric.weekly') : t('usage.metric.session');
-			lines.push(`${label}: ${metric.used}%`);
+			lines.push(`${label[metric.kind]}: ${metric.used}%`);
 			if (metric.resetsAt) {
 				lines.push('  ' + t('usage.metric.resetsAt', new Date(metric.resetsAt).toLocaleString()));
 			}
@@ -292,7 +292,7 @@ export class UsageStatusBar implements vscode.Disposable {
 			lines.push(t('usage.tooltip.offline'));
 		}
 		this.item.tooltip = lines.join('\n');
-		// Critical: weekly quota at 100% → error background.
+		// Any exhausted quota triggers the error background.
 		const exhausted = snapshot.metrics.some((m) => m.limit > 0 && m.used >= m.limit);
 		this.item.backgroundColor = exhausted
 			? new vscode.ThemeColor('statusBarItem.errorBackground')
